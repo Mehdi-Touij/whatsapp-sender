@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Upload, Play, Stop, RefreshCw, Phone, Send, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Upload, Play, Square, RefreshCw, Phone, Send, CheckCircle, XCircle, Clock } from "lucide-react";
 
 interface Campaign {
   id: string;
