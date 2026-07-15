@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     if (triggerUrl) {
       await fetch(`${triggerUrl}/api/v1/tasks/send-broadcast/runs`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: *** },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ***EY}` },
         body: JSON.stringify({
           recipients,
           messageTemplate: (await query("SELECT message_template FROM campaigns WHERE id = $1", [campaignId])).rows[0]?.message_template,
