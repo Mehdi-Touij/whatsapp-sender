@@ -1,28 +1,20 @@
 FROM atendai/evolution-api:v2.2.3
 
-# Evolution API is already in this image at /app
-# We need to add our dashboard alongside it
+# Evolution API is pre-installed at /app in this image
+# We add the dashboard on top
 
 WORKDIR /evolution
-
-# The Evolution API image already has everything at /app
-# Let's add the dashboard as a separate process
 
 # Install dashboard dependencies
 COPY dashboard/package.json /dashboard/package.json
 RUN cd /dashboard && npm install
 
-# Copy dashboard source
+# Copy dashboard source and build
 COPY dashboard/ /dashboard/
 RUN cd /dashboard && npm run build
 
-# Create start script that runs both
-RUN echo '#!/bin/sh' > /start.sh && \
-    echo 'cd /app && node dist/main.js &' >> /start.sh && \
-    echo 'EVOLUTION_PID=$!' >> /start.sh && \
-    echo 'echo "Evolution API started (PID: $EVOLUTION_PID)"' >> /start.sh && \
-    echo 'cd /dashboard && npm start' >> /start.sh && \
-    chmod +x /start.sh
+# Create start script — Evolution API runs on 8080, dashboard on 3000
+RUN printf '#!/bin/sh\nnode /app/dist/main.js &\nEVOLUTION_PID=$!\necho "Evolution API started (PID: $EVOLUTION_PID)"\ncd /dashboard && npm start\n' > /start.sh && chmod +x /start.sh
 
 EXPOSE 8080
 
