@@ -1,24 +1,32 @@
-FROM node:22-slim
+FROM atendai/evolution-api:v2.2.3
 
-# Install system deps for Evolution API
-RUN apt-get update && apt-get install -y --no-install-recommends     libcurl4 libssl3 ca-certificates ffmpeg     && rm -rf /var/lib/apt/lists/*
+# Evolution API is already in this image at /app
+# We need to add our dashboard alongside it
 
-WORKDIR /app
+WORKDIR /evolution
 
-# Install Evolution API globally
-RUN npm install -g @evolution/api@latest 2>/dev/null || echo "Will use npx"
+# The Evolution API image already has everything at /app
+# Let's add the dashboard as a separate process
 
-# Copy dashboard and install
-COPY dashboard/package.json dashboard/package.json
-RUN cd dashboard && npm install
-COPY dashboard/ dashboard/
-RUN cd dashboard && npm run build
+# Install dashboard dependencies
+COPY dashboard/package.json /dashboard/package.json
+RUN cd /dashboard && npm install
 
-# Create start script
-RUN echo '#!/bin/bash\n# Start Evolution API in background\nnpx @evolution/api &\nEVOLUTION_PID=$!\necho "Evolution API started (PID: $EVOLUTION_PID)"\n\n# Start dashboard\ncd dashboard && npm start' > /app/start.sh && chmod +x /app/start.sh
+# Copy dashboard source
+COPY dashboard/ /dashboard/
+RUN cd /dashboard && npm run build
 
-EXPOSE 3000
-ENV PORT=3000
+# Create start script that runs both
+RUN echo '#!/bin/sh' > /start.sh && \
+    echo 'cd /app && node dist/main.js &' >> /start.sh && \
+    echo 'EVOLUTION_PID=$!' >> /start.sh && \
+    echo 'echo "Evolution API started (PID: $EVOLUTION_PID)"' >> /start.sh && \
+    echo 'cd /dashboard && npm start' >> /start.sh && \
+    chmod +x /start.sh
+
+EXPOSE 8080
+
+ENV PORT=8080
 ENV NODE_ENV=production
 
-CMD ["/app/start.sh"]
+CMD ["/start.sh"]
