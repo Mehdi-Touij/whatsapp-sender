@@ -70,6 +70,7 @@ export default function Dashboard() {
     if (!newNumberName) return;
     setAddingNumber(true);
     setError("");
+    setQrCode("");
     try {
       const instance = "wa-" + Date.now().toString(36);
       const res = await fetch("/api/numbers", {
@@ -80,18 +81,40 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.error) {
         setError(data.error);
-      } else if (data.qrCode) {
-        // Remove wa.me prefix if present
-        let code = data.qrCode;
-        if (code.includes("wa.me")) code = code.split("#").pop() || code;
-        const encoded = encodeURIComponent(code);
-        setQrCode(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encoded}`);
+        setAddingNumber(false);
+        return;
       }
-      fetchStatus();
+      // Poll for QR code from database (VPS generates it)
+      const pollQR = async () => {
+        for (let i = 0; i < 40; i++) {
+          await new Promise(r => setTimeout(r, 2000));
+          try {
+            const r2 = await fetch(`/api/numbers?instance=${instance}`);
+            const d2 = await r2.json();
+            if (d2.qrCode) {
+              let code = d2.qrCode;
+              if (code.includes("wa.me")) code = code.split("#").pop() || code;
+              const encoded = encodeURIComponent(code);
+              setQrCode(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encoded}`);
+              setAddingNumber(false);
+              fetchStatus();
+              return;
+            }
+            if (d2.status === "error") {
+              setError("Failed to generate QR. Make sure VPS is running.");
+              setAddingNumber(false);
+              return;
+            }
+          } catch {}
+        }
+        setError("QR generation timed out. Make sure VPS is running.");
+        setAddingNumber(false);
+      };
+      pollQR();
     } catch (e: any) {
       setError(e.message);
+      setAddingNumber(false);
     }
-    setAddingNumber(false);
   };
 
   const deleteNumber = async (instance: string) => {
@@ -259,7 +282,7 @@ export default function Dashboard() {
                 <div className="bg-white rounded-lg p-4 shadow space-y-4">
                   <input className="w-full px-3 py-2 border rounded text-sm" placeholder="Number name (e.g. SIM 2 - IAM)" value={newNumberName} onChange={(e) => setNewNumberName(e.target.value)} />
                   <button onClick={addNumber} disabled={!newNumberName || addingNumber} className="px-4 py-2 bg-green-600 text-white rounded text-sm disabled:opacity-50">
-                    {addingNumber ? "Creating..." : "Generate QR Code"}
+                    {addingNumber ? "Generating QR... (VPS processing)" : "Generate QR Code"}
                   </button>
                   {qrCode && (
                     <div className="text-center">
