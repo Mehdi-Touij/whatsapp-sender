@@ -1,9 +1,16 @@
 // PostgreSQL connection — shared between dashboard API routes
 import { Pool } from "pg";
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+const connectionString = process.env.DATABASE_URL || "";
+
+// Parse the connection string to extract components
+// Railway PostgreSQL needs SSL on public URL, no SSL on internal URL
+const isRailwayInternal = connectionString.includes(".railway.internal");
+const needsSsl = !isRailwayInternal;
+
+export const pool = new Pool({
+  connectionString,
+  ssl: needsSsl ? { rejectUnauthorized: false } : false,
 });
 
 export async function query(text: string, params?: any[]) {
