@@ -1,4 +1,5 @@
 FROM atendai/evolution-api:v2.2.3
+# Cache break: v2
 
 # Evolution API is pre-installed at /app in this image
 # We add the dashboard on top
