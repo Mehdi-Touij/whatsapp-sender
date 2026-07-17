@@ -105,7 +105,7 @@ def get_hourly_count(instance):
     cur = conn.cursor()
     cur.execute("""
         SELECT COUNT(*) FROM send_log 
-        WHERE number_used = %s AND status = 'sent' AND created_at > NOW() - INTERVAL '1 hour'
+        WHERE number_used = %s AND status = 'sent' AND timestamp > NOW() - INTERVAL '1 hour'
     """, (instance,))
     count = cur.fetchone()[0]
     conn.close()
