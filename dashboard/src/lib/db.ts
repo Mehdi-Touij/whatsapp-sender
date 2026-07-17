@@ -5,12 +5,10 @@ const connectionString = process.env.DATABASE_URL || "";
 
 // Parse the connection string to extract components
 // Railway PostgreSQL needs SSL on public URL, no SSL on internal URL
-const isRailwayInternal = connectionString.includes(".railway.internal");
-const needsSsl = !isRailwayInternal;
-
+// Always use SSL when connecting to Railway PostgreSQL
 export const pool = new Pool({
   connectionString,
-  ssl: needsSsl ? { rejectUnauthorized: false } : false,
+  ssl: { rejectUnauthorized: false },
 });
 
 export async function query(text: string, params?: any[]) {
