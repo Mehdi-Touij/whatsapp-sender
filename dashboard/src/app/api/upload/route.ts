@@ -1,48 +1,43 @@
 // CSV upload endpoint — accepts CSV with phone numbers and names
-// POST /api/upload
-
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { createCampaign, addRecipient } from "@/lib/db";
 import { randomUUID } from "crypto";
 
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
-  const file = formData.get("file") as File;
-  const campaignName = formData.get("campaignName") as string;
-  const messageTemplate = formData.get("messageTemplate") as string;
+  try {
+    const formData = await req.formData();
+    const file = formData.get("file") as File;
+    const campaignName = formData.get("campaignName") as string;
+    const messageTemplate = formData.get("messageTemplate") as string;
 
-  if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
+    if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
+    if (!campaignName) return NextResponse.json({ error: "Campaign name required" }, { status: 400 });
+    if (!messageTemplate) return NextResponse.json({ error: "Message template required" }, { status: 400 });
 
-  const text = await file.text();
-  const lines = text.trim().split("\n").filter((l) => l.trim());
+    const text = await file.text();
+    const lines = text.trim().split("\n").filter((l) => l.trim());
 
-  // Parse CSV (skip header if it contains "phone")
-  const recipients: { phone: string; name: string }[] = [];
-  for (const line of lines) {
-    if (line.toLowerCase().includes("phone") && line.toLowerCase().includes("name")) continue;
-    const parts = line.split(",").map((p) => p.trim());
-    if (parts.length >= 1) {
-      recipients.push({
-        phone: parts[0].replace(/\s/g, ""),
-        name: parts[1] || "",
-      });
+    const recipients: { phone: string; name: string }[] = [];
+    for (const line of lines) {
+      if (line.toLowerCase().includes("phone") && line.toLowerCase().includes("name")) continue;
+      const parts = line.split(",").map((p) => p.trim());
+      if (parts.length >= 1 && parts[0]) {
+        recipients.push({
+          phone: parts[0].replace(/\s/g, "").replace("+", ""),
+          name: parts[1] || "",
+        });
+      }
     }
+
+    const campaignId = randomUUID();
+    await createCampaign(campaignId, campaignName, messageTemplate);
+
+    for (const r of recipients) {
+      await addRecipient(r.phone, r.name, campaignId);
+    }
+
+    return NextResponse.json({ campaignId, count: recipients.length });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
-
-  // Create campaign
-  const campaignId = randomUUID();
-  await query(
-    "INSERT INTO campaigns (id, name, message_template, total_recipients, status) VALUES ($1, $2, $3, $4, $5)",
-    [campaignId, campaignName, messageTemplate, recipients.length, "draft"]
-  );
-
-  // Insert recipients
-  for (const r of recipients) {
-    await query(
-      "INSERT INTO recipients (phone, name, status, campaign_id) VALUES ($1, $2, $3, $4) ON CONFLICT (phone) DO UPDATE SET campaign_id = $4",
-      [r.phone, r.name, "pending", campaignId]
-    );
-  }
-
-  return NextResponse.json({ campaignId, count: recipients.length });
 }

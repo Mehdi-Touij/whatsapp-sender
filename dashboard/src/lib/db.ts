@@ -1,9 +1,9 @@
-// PostgreSQL connection — shared between dashboard and Trigger.dev tasks
-
+// PostgreSQL connection — shared between dashboard API routes
 import { Pool } from "pg";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
 });
 
 export async function query(text: string, params?: any[]) {
@@ -16,7 +16,7 @@ export async function query(text: string, params?: any[]) {
   }
 }
 
-// Get active numbers (status = 'active' and connected)
+// Get active numbers
 export async function getActiveNumbers() {
   const result = await query("SELECT * FROM numbers WHERE status = $1", ["active"]);
   return result.rows;
@@ -78,4 +78,26 @@ export async function markNumberRestricted(instance: string) {
 export async function getCampaignProgress(campaignId: string) {
   const result = await query("SELECT * FROM campaigns WHERE id = $1", [campaignId]);
   return result.rows[0];
+}
+
+// Create campaign
+export async function createCampaign(id: string, name: string, messageTemplate: string) {
+  await query(
+    "INSERT INTO campaigns (id, name, message_template, status) VALUES ($1, $2, $3, $4)",
+    [id, name, messageTemplate, "draft"]
+  );
+}
+
+// Add recipient
+export async function addRecipient(phone: string, name: string, campaignId: string) {
+  await query(
+    "INSERT INTO recipients (phone, name, status, campaign_id) VALUES ($1, $2, $3, $4) ON CONFLICT (phone) DO UPDATE SET campaign_id = $4",
+    [phone, name, "pending", campaignId]
+  );
+}
+
+// Get all campaigns
+export async function getCampaigns() {
+  const result = await query("SELECT * FROM campaigns ORDER BY created_at DESC LIMIT 20");
+  return result.rows;
 }
