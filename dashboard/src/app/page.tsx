@@ -1,55 +1,65 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Upload, Play, Square, RefreshCw, Phone, Send, Plus, Trash2, QrCode, Activity, CheckCircle, XCircle, Clock, Zap } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 
+// ====== TYPES ======
 interface NumberInfo {
-  instance: string;
-  displayName: string;
-  phone: string;
-  status: string;
-  warmupStatus: string;
-  warmupDay: number;
-  warmupProgress: string;
-  msgsToday: number;
-  msgsTotal: number;
-  replies: number;
-  replyRate: string;
-  effectiveLimit: number;
-  hourlyLimit: number;
-  capacityLeft: number;
-  lastMessage: string | null;
+  instance: string; displayName: string; phone: string; status: string;
+  warmupStatus: string; warmupDay: number; warmupProgress: string;
+  msgsToday: number; msgsTotal: number; replies: number; replyRate: string;
+  effectiveLimit: number; hourlyLimit: number; capacityLeft: number; lastMessage: string | null;
 }
-
 interface Campaign {
-  id: string;
-  name: string;
-  status: string;
-  total: number;
-  sent: number;
-  replies: number;
+  id: string; name: string; status: string;
+  total_recipients?: number; total?: number;
+  sent_count?: number; sent?: number;
+  reply_count?: number; replies?: number;
 }
 
+// ====== HELPERS ======
+const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(" ");
+
+function StatusBadge({ status, warmup }: { status: string; warmup?: string }) {
+  if (status === "restricted") return <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">● Banned</span>;
+  if (warmup === "warmup") return <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">● Warmup</span>;
+  if (status === "active" || status === "open") return <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">● Active</span>;
+  if (status === "connecting") return <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">● Connecting</span>;
+  return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/10 text-gray-400 border border-gray-500/20">● {status}</span>;
+}
+
+function ProgressBar({ value, max, color = "bg-[#3ecf8e]" }: { value: number; max: number; color?: string }) {
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
+  return <div className="h-1 bg-[#2e2e2e] rounded-full overflow-hidden"><div className={cx("h-full rounded-full transition-all", color)} style={{ width: `${pct}%` }} /></div>;
+}
+
+function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: string }) {
+  return (
+    <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4">
+      <div className="text-xs text-[#898989] uppercase tracking-wider mb-1">{label}</div>
+      <div className={cx("text-2xl font-semibold", accent || "text-[#fafafa]")}>{value}</div>
+      {sub && <div className="text-xs text-[#898989] mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
+// ====== MAIN ======
 export default function Dashboard() {
   const [tab, setTab] = useState<"overview" | "numbers" | "campaigns">("overview");
   const [numbers, setNumbers] = useState<NumberInfo[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [totalCapacity, setTotalCapacity] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showAddNumber, setShowAddNumber] = useState(false);
   const [newNumberName, setNewNumberName] = useState("");
   const [qrCode, setQrCode] = useState("");
   const [addingNumber, setAddingNumber] = useState(false);
-
-  // Campaign form
   const [campaignName, setCampaignName] = useState("");
   const [messageTemplate, setMessageTemplate] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [activeCampaign, setActiveCampaign] = useState<Campaign | null>(null);
 
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch(`/api/status${activeCampaign ? `?campaignId=${activeCampaign.id}` : ""}`);
       const data = await res.json();
@@ -58,343 +68,306 @@ export default function Dashboard() {
       if (data.totalCapacity !== undefined) setTotalCapacity(data.totalCapacity);
       if (data.campaign) setActiveCampaign(data.campaign);
     } catch {}
-  };
+  }, [activeCampaign?.id]);
 
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 5000);
-    return () => clearInterval(interval);
-  }, [activeCampaign?.id]);
+    const t = setInterval(fetchStatus, 5000);
+    return () => clearInterval(t);
+  }, [fetchStatus]);
 
+  // === ADD NUMBER ===
   const addNumber = async () => {
     if (!newNumberName) return;
-    setAddingNumber(true);
-    setError("");
-    setQrCode("");
+    setAddingNumber(true); setError(""); setQrCode("");
     try {
       const instance = "wa-" + Date.now().toString(36);
       const res = await fetch("/api/numbers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ displayName: newNumberName, instanceName: instance }),
       });
       const data = await res.json();
-      if (data.error) {
-        setError(data.error);
-        setAddingNumber(false);
-        return;
+      if (data.error) { setError(data.error); setAddingNumber(false); return; }
+      // Poll for QR
+      for (let i = 0; i < 40; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        try {
+          const r2 = await fetch(`/api/numbers?instance=${instance}`);
+          const d2 = await r2.json();
+          if (d2.qrCode) {
+            let code = d2.qrCode;
+            if (code.includes("wa.me")) code = code.split("#").pop() || code;
+            setQrCode(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(code)}`);
+            setAddingNumber(false); fetchStatus(); return;
+          }
+          if (d2.status === "error") { setError("VPS not responding"); setAddingNumber(false); return; }
+        } catch {}
       }
-      // Poll for QR code from database (VPS generates it)
-      const pollQR = async () => {
-        for (let i = 0; i < 40; i++) {
-          await new Promise(r => setTimeout(r, 2000));
-          try {
-            const r2 = await fetch(`/api/numbers?instance=${instance}`);
-            const d2 = await r2.json();
-            if (d2.qrCode) {
-              let code = d2.qrCode;
-              if (code.includes("wa.me")) code = code.split("#").pop() || code;
-              const encoded = encodeURIComponent(code);
-              setQrCode(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encoded}`);
-              setAddingNumber(false);
-              fetchStatus();
-              return;
-            }
-            if (d2.status === "error") {
-              setError("Failed to generate QR. Make sure VPS is running.");
-              setAddingNumber(false);
-              return;
-            }
-          } catch {}
-        }
-        setError("QR generation timed out. Make sure VPS is running.");
-        setAddingNumber(false);
-      };
-      pollQR();
-    } catch (e: any) {
-      setError(e.message);
-      setAddingNumber(false);
-    }
+      setError("QR timeout — VPS not running"); setAddingNumber(false);
+    } catch (e: any) { setError(e.message); setAddingNumber(false); }
   };
 
   const deleteNumber = async (instance: string) => {
     if (!confirm("Delete this number?")) return;
-    try {
-      await fetch("/api/numbers", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instance }),
-      });
-      fetchStatus();
-    } catch {}
+    await fetch("/api/numbers", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ instance }) });
+    fetchStatus();
   };
 
+  // === CAMPAIGN ===
   const uploadCampaign = async () => {
-    if (!file || !campaignName || !messageTemplate) {
-      setError("Fill all fields and select a CSV");
-      return;
-    }
-    setUploading(true);
-    setError("");
+    if (!file || !campaignName || !messageTemplate) { setError("Fill all fields and select a CSV"); return; }
+    setUploading(true); setError("");
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("campaignName", campaignName);
-      formData.append("messageTemplate", messageTemplate);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const fd = new FormData();
+      fd.append("file", file); fd.append("campaignName", campaignName); fd.append("messageTemplate", messageTemplate);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
-      if (data.error) {
-        setError(data.error);
-      } else {
-        setActiveCampaign({ id: data.campaignId, name: campaignName, status: "draft", total: data.count, sent: 0, replies: 0 });
-        setCampaignName("");
-        setMessageTemplate("");
-        setFile(null);
-        fetchStatus();
+      if (data.error) { setError(data.error); } else {
+        setActiveCampaign({ id: data.campaignId, name: campaignName, status: "draft", total_recipients: data.count, sent_count: 0, reply_count: 0 });
+        setCampaignName(""); setMessageTemplate(""); setFile(null); fetchStatus();
       }
-    } catch (e: any) {
-      setError(e.message);
-    }
+    } catch (e: any) { setError(e.message); }
     setUploading(false);
   };
 
   const startCampaign = async () => {
     if (!activeCampaign) return;
-    try {
-      await fetch("/api/campaign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId: activeCampaign.id, action: "start" }),
-      });
-      fetchStatus();
-    } catch {}
+    await fetch("/api/campaign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaignId: activeCampaign.id, action: "start" }) });
+    fetchStatus();
   };
-
   const stopCampaign = async () => {
     if (!activeCampaign) return;
-    try {
-      await fetch("/api/campaign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId: activeCampaign.id, action: "stop" }),
-      });
-      fetchStatus();
-    } catch {}
+    await fetch("/api/campaign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaignId: activeCampaign.id, action: "stop" }) });
+    fetchStatus();
   };
 
-  // === Overview Tab ===
+  // === COMPUTED ===
   const activeCount = numbers.filter(n => n.status === "active" && n.warmupStatus === "active").length;
   const warmupCount = numbers.filter(n => n.warmupStatus === "warmup").length;
   const bannedCount = numbers.filter(n => n.status === "restricted").length;
-  const totalSentToday = numbers.reduce((sum, n) => sum + n.msgsToday, 0);
-  const totalReplies = numbers.reduce((sum, n) => sum + n.replies, 0);
+  const totalSentToday = numbers.reduce((s, n) => s + n.msgsToday, 0);
+  const totalReplies = numbers.reduce((s, n) => s + n.replies, 0);
+  const replyRate = totalSentToday > 0 ? ((totalReplies / totalSentToday) * 100).toFixed(1) : "0";
+
+  const navItem = (id: typeof tab, label: string, icon: string) => (
+    <button onClick={() => setTab(id)} className={cx("flex items-center gap-3 px-3 py-2 rounded-md text-sm w-full", tab === id ? "bg-[#2e2e2e] text-[#fafafa]" : "text-[#898989] hover:text-[#fafafa] hover:bg-[#1a1a1a]")}>
+      <span className="text-base">{icon}</span> {label}
+    </button>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="flex">
-        <div className="w-16 md:w-56 bg-gray-900 text-white min-h-screen p-2 md:p-4 flex flex-col gap-1">
-          <div className="px-2 py-3 mb-2 hidden md:block">
-            <h1 className="text-lg font-bold">WhatsApp Sender</h1>
-            <p className="text-xs text-gray-400">Smart messaging</p>
+    <div className="flex min-h-screen bg-[#171717]">
+      {/* SIDEBAR */}
+      <aside className="w-56 bg-[#1a1a1a] border-r border-[#2e2e2e] flex flex-col p-3 gap-1">
+        <div className="px-3 py-4 mb-2">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-md bg-[#3ecf8e] flex items-center justify-center text-[#171717] font-bold text-sm">W</div>
+            <span className="font-semibold text-sm">WhatsApp Sender</span>
           </div>
-          <button onClick={() => setTab("overview")} className={`flex items-center gap-2 px-3 py-2 rounded text-sm ${tab === "overview" ? "bg-blue-600" : "hover:bg-gray-800"}`}>
-            <Activity className="h-4 w-4" /> <span className="hidden md:inline">Overview</span>
-          </button>
-          <button onClick={() => setTab("numbers")} className={`flex items-center gap-2 px-3 py-2 rounded text-sm ${tab === "numbers" ? "bg-blue-600" : "hover:bg-gray-800"}`}>
-            <Phone className="h-4 w-4" /> <span className="hidden md:inline">Numbers</span>
-          </button>
-          <button onClick={() => setTab("campaigns")} className={`flex items-center gap-2 px-3 py-2 rounded text-sm ${tab === "campaigns" ? "bg-blue-600" : "hover:bg-gray-800"}`}>
-            <Send className="h-4 w-4" /> <span className="hidden md:inline">Campaigns</span>
-          </button>
         </div>
+        {navItem("overview", "Overview", "📊")}
+        {navItem("numbers", "Numbers", "📱")}
+        {navItem("campaigns", "Campaigns", "📨")}
+        <div className="mt-auto px-3 py-2 text-xs text-[#898989]">
+          <div className="flex items-center gap-2"><span className={cx("w-1.5 h-1.5 rounded-full", totalCapacity > 0 ? "bg-green-500" : "bg-red-500")} /> VPS {totalCapacity > 0 ? "Connected" : "Offline"}</div>
+        </div>
+      </aside>
 
-        {/* Main content */}
-        <div className="flex-1 p-4 md:p-8 max-w-4xl">
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm mb-4">{error}</div>}
+      {/* MAIN */}
+      <main className="flex-1 p-6 md:p-8 max-w-5xl">
+        {error && <div className="mb-4 px-4 py-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
 
-          {/* === OVERVIEW === */}
-          {tab === "overview" && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-bold">Overview</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white rounded-lg p-4 shadow">
-                  <div className="text-3xl font-bold text-blue-600">{totalSentToday}</div>
-                  <div className="text-sm text-gray-500">Messages Today</div>
-                </div>
-                <div className="bg-white rounded-lg p-4 shadow">
-                  <div className="text-3xl font-bold text-green-600">{totalReplies}</div>
-                  <div className="text-sm text-gray-500">Total Replies</div>
-                </div>
-                <div className="bg-white rounded-lg p-4 shadow">
-                  <div className="text-3xl font-bold text-purple-600">{totalCapacity}</div>
-                  <div className="text-sm text-gray-500">Capacity Left Today</div>
-                </div>
-                <div className="bg-white rounded-lg p-4 shadow">
-                  <div className="text-3xl font-bold">{numbers.length}</div>
-                  <div className="text-sm text-gray-500">Total Numbers</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-green-50 rounded-lg p-3 text-center">
-                  <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" />
-                  <div className="text-lg font-bold text-green-700">{activeCount}</div>
-                  <div className="text-xs text-gray-500">Active</div>
-                </div>
-                <div className="bg-yellow-50 rounded-lg p-3 text-center">
-                  <Clock className="h-6 w-6 text-yellow-600 mx-auto mb-1" />
-                  <div className="text-lg font-bold text-yellow-700">{warmupCount}</div>
-                  <div className="text-xs text-gray-500">In Warmup</div>
-                </div>
-                <div className="bg-red-50 rounded-lg p-3 text-center">
-                  <XCircle className="h-6 w-6 text-red-600 mx-auto mb-1" />
-                  <div className="text-lg font-bold text-red-700">{bannedCount}</div>
-                  <div className="text-xs text-gray-500">Banned</div>
-                </div>
-              </div>
-
-              {activeCampaign && (
-                <div className="bg-white rounded-lg p-4 shadow">
-                  <h3 className="font-semibold mb-3">Active Campaign: {activeCampaign.name}</h3>
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="text-center"><div className="text-2xl font-bold">{activeCampaign.total}</div><div className="text-xs text-gray-500">Total</div></div>
-                    <div className="text-center"><div className="text-2xl font-bold text-blue-600">{activeCampaign.sent}</div><div className="text-xs text-gray-500">Sent</div></div>
-                    <div className="text-center"><div className="text-2xl font-bold text-green-600">{activeCampaign.replies}</div><div className="text-xs text-gray-500">Replies</div></div>
-                    <div className="text-center"><div className="text-2xl font-bold">{activeCampaign.total > 0 ? Math.round((activeCampaign.sent / activeCampaign.total) * 100) : 0}%</div><div className="text-xs text-gray-500">Progress</div></div>
-                  </div>
-                </div>
-              )}
+        {/* === OVERVIEW === */}
+        {tab === "overview" && (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-semibold">Overview</h1>
+              <p className="text-sm text-[#898989] mt-1">Real-time messaging stats across all numbers</p>
             </div>
-          )}
 
-          {/* === NUMBERS === */}
-          {tab === "numbers" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold">WhatsApp Numbers</h2>
-                <button onClick={() => setShowAddNumber(!showAddNumber)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded text-sm">
-                  <Plus className="h-4 w-4" /> Add Number
-                </button>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard label="Sent Today" value={totalSentToday} accent="text-[#3ecf8e]" />
+              <StatCard label="Replies" value={totalReplies} accent="text-[#3b82f6]" />
+              <StatCard label="Reply Rate" value={`${replyRate}%`} accent="text-[#a855f7]" />
+              <StatCard label="Capacity Left" value={totalCapacity} sub="messages remaining today" />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-lg">✅</div>
+                <div><div className="text-xl font-semibold text-green-400">{activeCount}</div><div className="text-xs text-[#898989]">Active Numbers</div></div>
               </div>
+              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center text-lg">⏳</div>
+                <div><div className="text-xl font-semibold text-yellow-400">{warmupCount}</div><div className="text-xs text-[#898989]">In Warmup</div></div>
+              </div>
+              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-lg">🚫</div>
+                <div><div className="text-xl font-semibold text-red-400">{bannedCount}</div><div className="text-xs text-[#898989]">Banned</div></div>
+              </div>
+            </div>
 
-              {showAddNumber && (
-                <div className="bg-white rounded-lg p-4 shadow space-y-4">
-                  <input className="w-full px-3 py-2 border rounded text-sm" placeholder="Number name (e.g. SIM 2 - IAM)" value={newNumberName} onChange={(e) => setNewNumberName(e.target.value)} />
-                  <button onClick={addNumber} disabled={!newNumberName || addingNumber} className="px-4 py-2 bg-green-600 text-white rounded text-sm disabled:opacity-50">
-                    {addingNumber ? "Generating QR... (VPS processing)" : "Generate QR Code"}
-                  </button>
-                  {qrCode && (
-                    <div className="text-center">
-                      <p className="text-sm text-gray-500 mb-2">Scan with WhatsApp → Settings → Linked Devices → Link a Device</p>
-                      <img src={qrCode} alt="QR Code" className="mx-auto rounded border" width={300} height={300} />
-                    </div>
-                  )}
+            {activeCampaign && (
+              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-sm">Active Campaign: {activeCampaign.name}</h3>
+                  <span className={cx("text-xs px-3 py-1 rounded-full", activeCampaign.status === "sending" ? "bg-blue-500/10 text-blue-400" : activeCampaign.status === "completed" ? "bg-green-500/10 text-green-400" : "bg-gray-500/10 text-gray-400")}>{activeCampaign.status}</span>
                 </div>
-              )}
+                <div className="grid grid-cols-4 gap-4 mb-3">
+                  <div><div className="text-xl font-semibold">{(activeCampaign.total_recipients || activeCampaign.total || 0)}</div><div className="text-xs text-[#898989]">Total</div></div>
+                  <div><div className="text-xl font-semibold text-[#3ecf8e]">{(activeCampaign.sent_count || activeCampaign.sent || 0)}</div><div className="text-xs text-[#898989]">Sent</div></div>
+                  <div><div className="text-xl font-semibold text-[#3b82f6]">{(activeCampaign.reply_count || activeCampaign.replies || 0)}</div><div className="text-xs text-[#898989]">Replies</div></div>
+                  <div><div className="text-xl font-semibold">{activeCampaign.total_recipients || activeCampaign.total ? Math.round(((activeCampaign.sent_count || activeCampaign.sent || 0) / (activeCampaign.total_recipients || activeCampaign.total || 1)) * 100) : 0}%</div><div className="text-xs text-[#898989]">Progress</div></div>
+                </div>
+                <ProgressBar value={(activeCampaign.sent_count || activeCampaign.sent || 0)} max={(activeCampaign.total_recipients || activeCampaign.total || 1)} />
+              </div>
+            )}
 
-              <div className="space-y-3">
-                {numbers.length === 0 ? (
-                  <p className="text-gray-400 text-sm">No numbers yet. Click "Add Number" to link a WhatsApp number.</p>
-                ) : (
-                  numbers.map((n) => (
-                    <div key={n.instance} className="bg-white rounded-lg p-4 shadow">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <span className={`h-3 w-3 rounded-full ${n.status === "active" ? "bg-green-500" : n.status === "restricted" ? "bg-red-500" : "bg-yellow-500"}`} />
-                          <div>
-                            <div className="font-semibold text-sm">{n.displayName}</div>
-                            {n.phone && <div className="text-xs text-gray-400">{n.phone}</div>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {n.warmupStatus === "warmup" && (
-                            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
-                              <Clock className="inline h-3 w-3" /> Warmup Day {n.warmupDay}/3
-                            </span>
-                          )}
-                          {n.status === "active" && n.warmupStatus === "active" && (
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Active</span>
-                          )}
-                          {n.status === "restricted" && (
-                            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">Banned</span>
-                          )}
-                          <button onClick={() => deleteNumber(n.instance)} className="text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-4 gap-2 text-sm">
-                        <div className="text-center"><div className="font-bold">{n.msgsToday}/{n.effectiveLimit}</div><div className="text-xs text-gray-400">Today</div></div>
-                        <div className="text-center"><div className="font-bold">{n.msgsTotal}</div><div className="text-xs text-gray-400">Total Sent</div></div>
-                        <div className="text-center"><div className="font-bold text-green-600">{n.replies}</div><div className="text-xs text-gray-400">Replies</div></div>
-                        <div className="text-center"><div className="font-bold text-purple-600">{n.replyRate}</div><div className="text-xs text-gray-400">Reply Rate</div></div>
-                      </div>
-                      {/* Progress bar */}
-                      <div className="mt-2 bg-gray-100 rounded-full h-1.5">
-                        <div className="bg-blue-500 rounded-full h-1.5" style={{ width: `${Math.min((n.msgsToday / n.effectiveLimit) * 100, 100)}%` }} />
-                      </div>
+            {/* Recent numbers */}
+            <div>
+              <h3 className="text-sm font-semibold text-[#898989] uppercase tracking-wider mb-3">Your Numbers</h3>
+              <div className="space-y-2">
+                {numbers.length === 0 ? <p className="text-sm text-[#898989]">No numbers yet. Go to Numbers tab to add one.</p> : numbers.map(n => (
+                  <div key={n.instance} className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cx("w-8 h-8 rounded-full flex items-center justify-center text-sm", n.status === "restricted" ? "bg-red-500/10" : n.warmupStatus === "warmup" ? "bg-yellow-500/10" : "bg-green-500/10")}>{n.status === "restricted" ? "🚫" : n.warmupStatus === "warmup" ? "⏳" : "📱"}</div>
+                      <div><div className="text-sm font-medium">{n.displayName}</div><div className="text-xs text-[#898989]">{n.msgsToday}/{n.effectiveLimit} sent today</div></div>
                     </div>
-                  ))
+                    <StatusBadge status={n.status} warmup={n.warmupStatus} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* === NUMBERS === */}
+        {tab === "numbers" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div><h1 className="text-2xl font-semibold">Numbers</h1><p className="text-sm text-[#898989] mt-1">Manage your WhatsApp numbers</p></div>
+              <button onClick={() => { setShowAddNumber(!showAddNumber); setQrCode(""); setError(""); }} className="px-4 py-2 bg-[#3ecf8e] text-[#171717] rounded-md text-sm font-medium hover:bg-[#00c573]">+ Add Number</button>
+            </div>
+
+            {showAddNumber && (
+              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-5 space-y-4">
+                <div>
+                  <label className="text-xs text-[#898989] uppercase tracking-wider mb-2 block">Number Name</label>
+                  <input className="w-full px-3 py-2 bg-[#171717] border border-[#2e2e2e] rounded-md text-sm text-[#fafafa] focus:border-[#3ecf8e] focus:outline-none" placeholder="e.g. SIM 2 - IAM" value={newNumberName} onChange={e => setNewNumberName(e.target.value)} />
+                </div>
+                <button onClick={addNumber} disabled={!newNumberName || addingNumber} className="px-4 py-2 bg-[#3ecf8e] text-[#171717] rounded-md text-sm font-medium disabled:opacity-50 hover:bg-[#00c573]">
+                  {addingNumber ? "Generating QR..." : "Generate QR Code"}
+                </button>
+                {addingNumber && <p className="text-xs text-[#898989]">Waiting for VPS to generate QR code...</p>}
+                {qrCode && (
+                  <div className="text-center pt-2">
+                    <p className="text-sm text-[#898989] mb-3">📱 Open WhatsApp → Settings → Linked Devices → Link a Device</p>
+                    <div className="inline-block p-3 bg-white rounded-lg"><img src={qrCode} alt="QR Code" width={250} height={250} /></div>
+                    <p className="text-xs text-[#898989] mt-2">Scan with your phone to link this number</p>
+                  </div>
                 )}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* === CAMPAIGNS === */}
-          {tab === "campaigns" && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-bold">Campaigns</h2>
-
-              {/* New campaign form */}
-              <div className="bg-white rounded-lg p-4 shadow space-y-3">
-                <h3 className="font-semibold text-sm">New Campaign</h3>
-                <input className="w-full px-3 py-2 border rounded text-sm" placeholder="Campaign name (e.g. Lesson 1)" value={campaignName} onChange={(e) => setCampaignName(e.target.value)} />
-                <textarea className="w-full px-3 py-2 border rounded text-sm font-mono" rows={3} placeholder="Message: {Hi|Hello} {name}, your lesson is ready! Reply 1 to confirm." value={messageTemplate} onChange={(e) => setMessageTemplate(e.target.value)} />
-                <div className="flex items-center gap-4">
-                  <input type="file" accept=".csv" onChange={(e) => setFile(e.target.files?.[0] || null)} className="text-sm" />
-                  <button onClick={uploadCampaign} disabled={!file || !campaignName || !messageTemplate || uploading} className="px-4 py-2 bg-blue-600 text-white rounded text-sm disabled:opacity-50">
-                    {uploading ? "Uploading..." : "Create Campaign"}
-                  </button>
+            <div className="space-y-3">
+              {numbers.length === 0 ? <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-8 text-center"><p className="text-sm text-[#898989]">No numbers yet. Click "Add Number" to link your first WhatsApp number.</p></div> : numbers.map(n => (
+                <div key={n.instance} className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={cx("w-10 h-10 rounded-full flex items-center justify-center", n.status === "restricted" ? "bg-red-500/10" : n.warmupStatus === "warmup" ? "bg-yellow-500/10" : "bg-green-500/10")}>
+                        <span className="text-lg">{n.status === "restricted" ? "🚫" : n.warmupStatus === "warmup" ? "⏳" : "📱"}</span>
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm">{n.displayName}</div>
+                        {n.phone && <div className="text-xs text-[#898989]">{n.phone}</div>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={n.status} warmup={n.warmupStatus} />
+                      {n.warmupStatus === "warmup" && <span className="text-xs text-[#898989]">Day {n.warmupDay}/3</span>}
+                      <button onClick={() => deleteNumber(n.instance)} className="text-[#898989] hover:text-red-400 ml-2"><span className="text-sm">🗑</span></button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3 mb-3">
+                    <div className="text-center"><div className="text-sm font-semibold">{n.msgsToday}/{n.effectiveLimit}</div><div className="text-xs text-[#898989]">Today</div></div>
+                    <div className="text-center"><div className="text-sm font-semibold">{n.msgsTotal}</div><div className="text-xs text-[#898989]">Total</div></div>
+                    <div className="text-center"><div className="text-sm font-semibold text-[#3b82f6]">{n.replies}</div><div className="text-xs text-[#898989]">Replies</div></div>
+                    <div className="text-center"><div className="text-sm font-semibold text-[#a855f7]">{n.replyRate}</div><div className="text-xs text-[#898989]">Reply Rate</div></div>
+                  </div>
+                  <ProgressBar value={n.msgsToday} max={n.effectiveLimit} color={n.warmupStatus === "warmup" ? "bg-yellow-500" : "bg-[#3ecf8e]"} />
                 </div>
-                <p className="text-xs text-gray-400">CSV: phone,name (one per line). Use {`{Hi|Hello}`} for spintax, {`{name}`} for personalization.</p>
-              </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-              {/* Active campaign */}
-              {activeCampaign && (
-                <div className="bg-white rounded-lg p-4 shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold">{activeCampaign.name}</h3>
-                    <span className={`text-xs px-3 py-1 rounded-full ${activeCampaign.status === "sending" ? "bg-blue-100 text-blue-700" : activeCampaign.status === "completed" ? "bg-green-100 text-green-700" : "bg-gray-100"}`}>{activeCampaign.status}</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-4 mb-3">
-                    <div className="text-center"><div className="text-xl font-bold">{activeCampaign.total}</div><div className="text-xs text-gray-400">Total</div></div>
-                    <div className="text-center"><div className="text-xl font-bold text-blue-600">{activeCampaign.sent}</div><div className="text-xs text-gray-400">Sent</div></div>
-                    <div className="text-center"><div className="text-xl font-bold text-green-600">{activeCampaign.replies}</div><div className="text-xs text-gray-400">Replies</div></div>
-                    <div className="text-center"><div className="text-xl font-bold">{activeCampaign.total > 0 ? Math.round((activeCampaign.sent / activeCampaign.total) * 100) : 0}%</div><div className="text-xs text-gray-400">Done</div></div>
-                  </div>
+        {/* === CAMPAIGNS === */}
+        {tab === "campaigns" && (
+          <div className="space-y-6">
+            <div><h1 className="text-2xl font-semibold">Campaigns</h1><p className="text-sm text-[#898989] mt-1">Create and manage messaging campaigns</p></div>
+
+            {/* New Campaign */}
+            <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-5 space-y-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-[#898989]">New Campaign</h3>
+              <div>
+                <label className="text-xs text-[#898989] mb-1 block">Campaign Name</label>
+                <input className="w-full px-3 py-2 bg-[#171717] border border-[#2e2e2e] rounded-md text-sm focus:border-[#3ecf8e] focus:outline-none" placeholder="e.g. Lesson 1 - Introduction" value={campaignName} onChange={e => setCampaignName(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs text-[#898989] mb-1 block">Message Template</label>
+                <textarea className="w-full px-3 py-2 bg-[#171717] border border-[#2e2e2e] rounded-md text-sm font-mono focus:border-[#3ecf8e] focus:outline-none" rows={3} placeholder="{Hi|Hello|Salam} {name}, your Lesson 1 is ready! Reply 1 to confirm." value={messageTemplate} onChange={e => setMessageTemplate(e.target.value)} />
+                <p className="text-xs text-[#898989] mt-1">Use {`{Hi|Hello|Salam}`} for spintax (random greeting each time) and {`{name}`} for personalization.</p>
+              </div>
+              <div>
+                <label className="text-xs text-[#898989] mb-1 block">CSV File (phone,name)</label>
+                <div className="flex items-center gap-3">
+                  <input type="file" accept=".csv" onChange={e => setFile(e.target.files?.[0] || null)} className="text-sm text-[#898989] file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-[#2e2e2e] file:text-[#fafafa] file:text-sm hover:file:bg-[#363636]" />
+                  <button onClick={uploadCampaign} disabled={!file || !campaignName || !messageTemplate || uploading} className="px-4 py-2 bg-[#3ecf8e] text-[#171717] rounded-md text-sm font-medium disabled:opacity-50 hover:bg-[#00c573]">{uploading ? "Creating..." : "Create Campaign"}</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Active Campaign */}
+            {activeCampaign && (
+              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold">{activeCampaign.name}</h3>
+                  <span className={cx("text-xs px-3 py-1 rounded-full", activeCampaign.status === "sending" ? "bg-blue-500/10 text-blue-400" : activeCampaign.status === "completed" ? "bg-green-500/10 text-green-400" : "bg-gray-500/10 text-gray-400")}>{activeCampaign.status}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-4 mb-4">
+                  <div><div className="text-xl font-semibold">{(activeCampaign.total_recipients || activeCampaign.total || 0)}</div><div className="text-xs text-[#898989]">Total Recipients</div></div>
+                  <div><div className="text-xl font-semibold text-[#3ecf8e]">{(activeCampaign.sent_count || activeCampaign.sent || 0)}</div><div className="text-xs text-[#898989]">Sent</div></div>
+                  <div><div className="text-xl font-semibold text-[#3b82f6]">{(activeCampaign.reply_count || activeCampaign.replies || 0)}</div><div className="text-xs text-[#898989]">Replies</div></div>
+                  <div><div className="text-xl font-semibold text-[#a855f7]">{activeCampaign.total_recipients || activeCampaign.total ? Math.round(((activeCampaign.sent_count || activeCampaign.sent || 0) / (activeCampaign.total_recipients || activeCampaign.total || 1)) * 100) : 0}%</div><div className="text-xs text-[#898989]">Progress</div></div>
+                </div>
+                <ProgressBar value={(activeCampaign.sent_count || activeCampaign.sent || 0)} max={(activeCampaign.total_recipients || activeCampaign.total || 1)} />
+                <div className="mt-4">
                   {(activeCampaign.status === "draft" || activeCampaign.status === "paused") ? (
-                    <button onClick={startCampaign} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded text-sm"><Play className="h-4 w-4" /> Start</button>
+                    <button onClick={startCampaign} className="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-500">▶ Start Campaign</button>
                   ) : activeCampaign.status === "sending" ? (
-                    <button onClick={stopCampaign} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded text-sm"><Square className="h-4 w-4" /> Stop</button>
+                    <button onClick={stopCampaign} className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-500">⏸ Stop Campaign</button>
                   ) : null}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Recent campaigns */}
-              {campaigns.length > 0 && (
-                <div className="bg-white rounded-lg p-4 shadow">
-                  <h3 className="font-semibold text-sm mb-3">Recent Campaigns</h3>
-                  {campaigns.map((c) => (
-                    <div key={c.id} className="flex items-center justify-between border-b py-2 text-sm cursor-pointer hover:bg-gray-50" onClick={() => setActiveCampaign(c)}>
-                      <span>{c.name}</span>
-                      <span className="text-gray-400">{c.sent}/{c.total} · {c.replies} replies</span>
+            {/* Recent Campaigns */}
+            {campaigns.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-[#898989] mb-3">Recent Campaigns</h3>
+                <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg divide-y divide-[#2e2e2e]">
+                  {campaigns.map(c => (
+                    <div key={c.id} onClick={() => setActiveCampaign(c)} className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-[#1c1c1c]">
+                      <span className="text-sm">{c.name}</span>
+                      <span className="text-xs text-[#898989]">{c.sent_count || c.sent || 0}/{c.total_recipients || c.total || 0} sent · {c.reply_count || c.replies || 0} replies</span>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
     </div>
   );
 }
