@@ -2,9 +2,9 @@ FROM node:22-slim
 
 WORKDIR /app
 
-# Install dashboard dependencies
-COPY dashboard/package.json /dashboard/package.json
-RUN cd /dashboard && npm install
+# Install dashboard dependencies (copy both package.json AND package-lock.json)
+COPY dashboard/package.json dashboard/package-lock.json /dashboard/
+RUN cd /dashboard && npm ci --legacy-peer-deps
 
 # Copy dashboard source and build
 COPY dashboard/ /dashboard/
