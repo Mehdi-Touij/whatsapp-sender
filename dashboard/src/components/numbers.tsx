@@ -1,30 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
-  Plus, Trash2, AlertTriangle, QrCode, Loader2, Phone, MessageSquare, Clock,
-  TrendingUp, Zap, Shield,
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+  Card, Title, Text, Badge, Button, ProgressBar, Grid, Col, Flex,
+  Dialog, DialogPanel, TextInput,
+} from "@tremor/react";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+  PlusIcon, TrashIcon, QrCodeIcon, PhoneIcon, ChatBubbleLeftIcon,
+  ClockIcon, ArrowTrendingUpIcon, BoltIcon, ShieldCheckIcon,
+  ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, ArrowPathIcon,
+} from "@heroicons/react/24/outline";
 import {
   type NumberInfo, getNumberHealth, healthColor, healthText, isAtRisk, warmupLimitForDay,
 } from "@/lib/types";
 
 interface NumbersProps {
   numbers: NumberInfo[];
-  onAddNumber: (displayName: string) => Promise<void>;
+  onAddNumber: (displayName: string) => Promise<{ instance: string } | null>;
   onDeleteNumber: (instance: string) => Promise<void>;
+  showToast: (kind: "error" | "info", msg: string) => void;
 }
+
+type QrStatus = "waiting" | "scanning" | "connected" | "error";
 
 function timeAgo(iso: string | null | undefined): string {
   if (!iso) return "Never";
@@ -34,212 +31,334 @@ function timeAgo(iso: string | null | undefined): string {
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function statusBadge(n: NumberInfo) {
+  if (n.status === "restricted") return <Badge color="red">Banned</Badge>;
+  if (n.warmupStatus === "warmup") return <Badge color="amber">Warmup D{n.warmupDay}/3</Badge>;
+  if (n.status === "connecting") return <Badge color="slate">Connecting</Badge>;
+  return <Badge color="emerald">Active</Badge>;
 }
 
 function NumberCard({ n, onDelete }: { n: NumberInfo; onDelete: () => void }) {
   const health = getNumberHealth(n);
   const atRisk = isAtRisk(n);
   const dailyPct = n.effectiveLimit > 0 ? (n.msgsToday / n.effectiveLimit) * 100 : 0;
-  const hourlyPct = n.hourlyLimit && n.hourlyLimit > 0
-    ? ((n.msgsThisHour || 0) / n.hourlyLimit) * 100 : 0;
+  const hourlyPct = n.hourlyLimit && n.hourlyLimit > 0 ? ((n.msgsThisHour || 0) / n.hourlyLimit) * 100 : 0;
   const nextDayLimit = warmupLimitForDay((n.warmupDay || 0) + 1);
+  const progColor: "emerald" | "amber" | "red" = dailyPct >= 90 ? "red" : dailyPct >= 70 ? "amber" : "emerald";
+  const hourColor: "emerald" | "amber" | "red" = hourlyPct >= 90 ? "red" : hourlyPct >= 70 ? "amber" : "emerald";
 
   return (
-    <Card className={cn("relative overflow-hidden", atRisk && "border-yellow-500/40")}>
-      {atRisk && (
-        <div className="absolute top-0 right-0 px-2 py-0.5 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 text-xs font-medium rounded-bl-md flex items-center gap-1">
-          <AlertTriangle className="w-3 h-3" /> At risk
-        </div>
-      )}
-      <CardContent className="p-5 space-y-4">
+    <Card decoration={atRisk ? "left" : undefined} decorationColor={atRisk ? "amber" : undefined} className="h-full">
+      <div className="space-y-4">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-              n.status === "restricted" ? "bg-red-500/10"
-              : n.warmupStatus === "warmup" ? "bg-yellow-500/10"
-              : "bg-green-500/10")}>
-              <Phone className={cn("w-4 h-4",
+        <Flex justifyContent="between" alignItems="start">
+          <Flex justifyContent="start" className="gap-3 min-w-0">
+            <div className={[
+              "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+              n.status === "restricted" ? "bg-red-50 dark:bg-red-500/10"
+                : n.warmupStatus === "warmup" ? "bg-amber-50 dark:bg-amber-500/10"
+                : "bg-emerald-50 dark:bg-emerald-500/10",
+            ].join(" ")}>
+              <PhoneIcon className={[
+                "w-5 h-5",
                 n.status === "restricted" ? "text-red-500"
-                : n.warmupStatus === "warmup" ? "text-yellow-500"
-                : "text-green-500")} />
+                  : n.warmupStatus === "warmup" ? "text-amber-500"
+                  : "text-emerald-500",
+              ].join(" ")} />
             </div>
             <div className="min-w-0">
-              <div className="font-medium text-sm truncate flex items-center gap-1.5">
+              <div className="font-medium text-sm truncate flex items-center gap-1.5 text-tremor-content-strong dark:text-dark-tremor-content-strong">
                 {n.displayName}
-                <span className={cn("w-1.5 h-1.5 rounded-full", healthColor(health))} title={healthText(health)} />
+                <span className={["w-1.5 h-1.5 rounded-full", healthColor(health)].join(" ")} title={healthText(health)} />
               </div>
-              <div className="text-xs text-muted-foreground truncate">{n.phone || "Awaiting connection"}</div>
+              <div className="text-xs text-tremor-content truncate dark:text-dark-tremor-content">{n.phone || "Awaiting connection"}</div>
             </div>
-          </div>
+          </Flex>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            {n.status === "restricted" ? <Badge variant="destructive">Banned</Badge>
-              : n.warmupStatus === "warmup" ? <Badge variant="warning">Warmup D{n.warmupDay}/3</Badge>
-              : n.status === "connecting" ? <Badge variant="secondary">Connecting</Badge>
-              : <Badge variant="success">Active</Badge>}
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onDelete} aria-label="Delete number">
-              <Trash2 className="w-4 h-4 text-muted-foreground" />
-            </Button>
+            {statusBadge(n)}
+            <Button
+              variant="light"
+              size="xs"
+              icon={TrashIcon}
+              onClick={onDelete}
+              aria-label="Delete number"
+              className="text-tremor-content hover:text-red-500 dark:text-dark-tremor-content"
+            />
           </div>
-        </div>
+        </Flex>
+
+        {atRisk && (
+          <div className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+            <ExclamationTriangleIcon className="w-3.5 h-3.5" /> At risk
+          </div>
+        )}
 
         {/* Daily progress */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Today</span>
-            <span className="font-medium tabular-nums">{n.msgsToday}<span className="text-muted-foreground">/{n.effectiveLimit}</span></span>
-          </div>
-          <Progress
-            value={Math.min(100, dailyPct)}
-            className="h-1.5"
-            indicatorColor={dailyPct >= 90 ? "bg-red-500" : dailyPct >= 70 ? "bg-yellow-500" : ""}
-          />
+          <Flex justifyContent="between">
+            <Text className="text-xs text-tremor-content flex items-center gap-1 dark:text-dark-tremor-content">
+              <ChatBubbleLeftIcon className="w-3.5 h-3.5" /> Today
+            </Text>
+            <Text className="text-xs font-medium tabular-nums">
+              {n.msgsToday}<span className="text-tremor-content dark:text-dark-tremor-content">/{n.effectiveLimit}</span>
+            </Text>
+          </Flex>
+          <ProgressBar value={Math.min(100, dailyPct)} color={progColor} showAnimation />
         </div>
 
         {/* Hourly progress */}
         {n.hourlyLimit && (
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground flex items-center gap-1"><Zap className="w-3 h-3" /> This hour</span>
-              <span className="font-medium tabular-nums">{n.msgsThisHour || 0}<span className="text-muted-foreground">/{n.hourlyLimit}</span></span>
-            </div>
-            <Progress
-              value={Math.min(100, hourlyPct)}
-              className="h-1.5"
-              indicatorColor={hourlyPct >= 90 ? "bg-red-500" : hourlyPct >= 70 ? "bg-yellow-500" : ""}
-            />
+            <Flex justifyContent="between">
+              <Text className="text-xs text-tremor-content flex items-center gap-1 dark:text-dark-tremor-content">
+                <BoltIcon className="w-3.5 h-3.5" /> This hour
+              </Text>
+              <Text className="text-xs font-medium tabular-nums">
+                {n.msgsThisHour || 0}<span className="text-tremor-content dark:text-dark-tremor-content">/{n.hourlyLimit}</span>
+              </Text>
+            </Flex>
+            <ProgressBar value={Math.min(100, hourlyPct)} color={hourColor} showAnimation />
           </div>
         )}
 
-        <Separator />
-
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div>
-            <div className="text-sm font-semibold tabular-nums flex items-center justify-center gap-1 text-purple-500">
-              <TrendingUp className="w-3 h-3" />{n.replyRate}
+        <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-tremor-border dark:border-dark-tremor-border">
+          <div className="pt-2">
+            <div className="text-sm font-semibold tabular-nums flex items-center justify-center gap-1 text-violet-500">
+              <ArrowTrendingUpIcon className="w-3.5 h-3.5" />{n.replyRate}
             </div>
-            <div className="text-xs text-muted-foreground">Reply rate</div>
+            <div className="text-xs text-tremor-content dark:text-dark-tremor-content">Reply rate</div>
           </div>
-          <div>
-            <div className="text-sm font-semibold tabular-nums">{n.replies}</div>
-            <div className="text-xs text-muted-foreground">Replies</div>
+          <div className="pt-2">
+            <div className="text-sm font-semibold tabular-nums text-tremor-content-strong dark:text-dark-tremor-content-strong">{n.replies}</div>
+            <div className="text-xs text-tremor-content dark:text-dark-tremor-content">Replies</div>
           </div>
-          <div>
-            <div className="text-sm font-semibold tabular-nums">{n.msgsTotal}</div>
-            <div className="text-xs text-muted-foreground">Total sent</div>
+          <div className="pt-2">
+            <div className="text-sm font-semibold tabular-nums text-tremor-content-strong dark:text-dark-tremor-content-strong">{n.msgsTotal}</div>
+            <div className="text-xs text-tremor-content dark:text-dark-tremor-content">Total sent</div>
           </div>
         </div>
 
         {/* Warmup banner */}
         {n.warmupStatus === "warmup" && (
-          <div className="rounded-md bg-yellow-500/10 border border-yellow-500/20 p-2.5 text-xs space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
-                <Shield className="w-3 h-3" /> Warmup Day {n.warmupDay}/3
+          <div className="rounded-tremor-default bg-amber-50 border border-amber-500/20 p-2.5 text-xs space-y-1 dark:bg-amber-500/10">
+            <Flex justifyContent="between">
+              <span className="font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                <ShieldCheckIcon className="w-3.5 h-3.5" /> Warmup Day {n.warmupDay}/3
               </span>
-              <span className="text-muted-foreground">{n.warmupProgress}</span>
-            </div>
-            <p className="text-muted-foreground">
-              Day {Math.min(n.warmupDay + 1, 3)}: limit → <span className="font-medium text-foreground">{nextDayLimit}/day</span>
+              <span className="text-tremor-content dark:text-dark-tremor-content">{n.warmupProgress}</span>
+            </Flex>
+            <Text className="text-tremor-content dark:text-dark-tremor-content">
+              Day {Math.min(n.warmupDay + 1, 3)}: limit → <span className="font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">{nextDayLimit}/day</span>
               {n.warmupDay >= 3 && " · graduates to full capacity"}
-            </p>
+            </Text>
           </div>
         )}
 
         {/* Last message time */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-0.5">
-          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Last message</span>
-          <span>{timeAgo(n.lastMessage)}</span>
-        </div>
-      </CardContent>
+        <Flex justifyContent="between">
+          <Text className="text-xs text-tremor-content flex items-center gap-1 dark:text-dark-tremor-content">
+            <ClockIcon className="w-3.5 h-3.5" /> Last message
+          </Text>
+          <Text className="text-xs text-tremor-content dark:text-dark-tremor-content">{timeAgo(n.lastMessage)}</Text>
+        </Flex>
+      </div>
     </Card>
   );
 }
 
-export function Numbers({ numbers, onAddNumber, onDeleteNumber }: NumbersProps) {
+export function Numbers({ numbers, onAddNumber, onDeleteNumber, showToast }: NumbersProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // QR dialog state
+  const [qrOpen, setQrOpen] = useState(false);
+  const [qrName, setQrName] = useState("");
+  const [qrInstance, setQrInstance] = useState("");
+  const [qrUrl, setQrUrl] = useState("");
+  const [qrStatus, setQrStatus] = useState<QrStatus>("waiting");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
+
+  const startPolling = (instance: string) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    let connected = false;
+    pollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/numbers?instance=${instance}`, { cache: "no-store" });
+        const d = await r.json();
+        if (d.qrCode) {
+          let code: string = d.qrCode;
+          if (code.includes("wa.me")) code = code.split("#").pop() || code;
+          if (!code.startsWith("http")) {
+            code = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(code)}`;
+          }
+          setQrUrl(code);
+          setQrStatus("scanning");
+        }
+        if (d.status === "connected" || d.status === "active") {
+          setQrStatus("connected");
+          connected = true;
+          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+        }
+        if (d.status === "error") {
+          setQrStatus("error");
+          showToast("error", "VPS not responding. Try again.");
+          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+        }
+      } catch {
+        // ignore transient errors
+      }
+    }, 2000);
+    // Auto-stop after 90s
+    setTimeout(() => {
+      if (!connected && pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+        setQrStatus((s) => (s === "connected" ? s : "waiting"));
+      }
+    }, 90000);
+  };
+
   const handleAdd = async () => {
     if (!name.trim()) return;
     setBusy(true);
-    try {
-      await onAddNumber(name.trim());
+    const res = await onAddNumber(name.trim());
+    setBusy(false);
+    if (res) {
       setName("");
       setOpen(false);
-    } finally {
-      setBusy(false);
+      setQrName(name.trim());
+      setQrInstance(res.instance);
+      setQrUrl("");
+      setQrStatus("waiting");
+      setQrOpen(true);
+      startPolling(res.instance);
     }
+  };
+
+  const closeQr = () => {
+    setQrOpen(false);
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <Flex justifyContent="between" alignItems="center" className="flex-wrap gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Numbers</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your WhatsApp numbers and warmup</p>
+          <Title>Numbers</Title>
+          <Text>Manage your WhatsApp numbers and warmup</Text>
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4" /> Add Number
-        </Button>
-      </div>
+        <Button icon={PlusIcon} onClick={() => setOpen(true)}>Add Number</Button>
+      </Flex>
 
       {numbers.length === 0 ? (
         <Card>
-          <CardContent className="py-16 text-center">
-            <Phone className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-40" />
-            <p className="text-sm text-muted-foreground">No numbers yet. Click "Add Number" to link your first WhatsApp number.</p>
-          </CardContent>
+          <div className="py-16 text-center">
+            <PhoneIcon className="w-10 h-10 text-tremor-content mx-auto mb-3 opacity-40 dark:text-dark-tremor-content" />
+            <Text>No numbers yet. Click "Add Number" to link your first WhatsApp number.</Text>
+          </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {numbers.map(n => (
-            <NumberCard
-              key={n.instance}
-              n={n}
-              onDelete={() => onDeleteNumber(n.instance)}
-            />
+        <Grid numItems={1} numItemsMd={2} numItemsLg={3} className="gap-4">
+          {numbers.map((n) => (
+            <NumberCard key={n.instance} n={n} onDelete={() => onDeleteNumber(n.instance)} />
           ))}
-        </div>
+        </Grid>
       )}
 
       {/* Add Number dialog */}
-      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setName(""); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4" /> Add a WhatsApp Number</DialogTitle>
-            <DialogDescription>
-              Enter a name to identify this number. You'll scan a QR code from your phone to link it.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
+      <Dialog open={open} onClose={(o) => { setOpen(o); if (!o) setName(""); }} static={false}>
+        <DialogPanel className="max-w-sm">
+          <div className="flex items-center gap-2 mb-1">
+            <PlusIcon className="w-5 h-5 text-blue-500" />
+            <Title className="text-lg">Add a WhatsApp Number</Title>
+          </div>
+          <Text className="mb-4">Enter a name to identify this number. You'll scan a QR code from your phone to link it.</Text>
+          <div className="space-y-3">
             <div>
-              <Label htmlFor="num-name">Display name</Label>
-              <Input
-                id="num-name"
-                className="mt-1.5"
+              <Text className="mb-1">Display name</Text>
+              <TextInput
                 placeholder="e.g. SIM 2 — IAM"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && name.trim() && !busy) handleAdd(); }}
+                onChange={(e: any) => setName(e.target.value)}
+                onKeyDown={(e: any) => { if (e.key === "Enter" && name.trim() && !busy) handleAdd(); }}
                 autoFocus
               />
-              <p className="text-xs text-muted-foreground mt-1.5">
-                You'll be asked to scan a QR code via WhatsApp → Linked Devices.
-              </p>
+              <Text className="text-xs mt-1.5">You'll be asked to scan a QR code via WhatsApp → Linked Devices.</Text>
             </div>
           </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy} className="w-full sm:w-auto">Cancel</Button>
-            <Button onClick={handleAdd} disabled={!name.trim() || busy} className="w-full sm:w-auto">
-              {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : <><QrCode className="w-4 h-4" /> Generate QR</>}
+          <Flex justifyContent="end" className="gap-2 mt-5">
+            <Button variant="secondary" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
+            <Button icon={busy ? ArrowPathIcon : QrCodeIcon} onClick={handleAdd} disabled={!name.trim() || busy} loading={busy} loadingText="Generating…">
+              {busy ? "Generating…" : "Generate QR"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </Flex>
+        </DialogPanel>
+      </Dialog>
+
+      {/* QR display dialog */}
+      <Dialog open={qrOpen} onClose={closeQr} static={false}>
+        <DialogPanel className="max-w-sm">
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <QrCodeIcon className="w-5 h-5 text-blue-500" />
+                <Title className="text-lg truncate">Linking {qrName}</Title>
+              </div>
+              <Text className="text-xs mt-1">Open WhatsApp → Settings → Linked Devices → Link a Device</Text>
+            </div>
+            <button onClick={closeQr} className="text-tremor-content hover:text-tremor-content-strong dark:text-dark-tremor-content dark:hover:text-dark-tremor-content-strong shrink-0" aria-label="Close">
+              <XCircleIcon className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex flex-col items-center gap-3 py-2">
+            {qrStatus === "waiting" && !qrUrl && (
+              <div className="w-[240px] h-[240px] rounded-tremor-default border-2 border-dashed border-tremor-border flex flex-col items-center justify-center text-sm text-tremor-content dark:border-dark-tremor-border dark:text-dark-tremor-content">
+                <ArrowPathIcon className="w-6 h-6 animate-spin mb-2 text-blue-500" />
+                Generating QR code…
+              </div>
+            )}
+            {qrUrl && qrStatus !== "connected" && (
+              <>
+                <div className="p-3 bg-white rounded-tremor-default">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={qrUrl} alt="QR code" width={220} height={220} />
+                </div>
+                <Badge color="amber" icon={ClockIcon}>Waiting for scan…</Badge>
+              </>
+            )}
+            {qrStatus === "connected" && (
+              <div className="text-center py-6">
+                <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-2 dark:bg-emerald-500/10">
+                  <CheckCircleIcon className="w-7 h-7 text-emerald-500" />
+                </div>
+                <Text className="font-medium">Number connected!</Text>
+                <Text className="text-xs mt-0.5">You can close this window.</Text>
+              </div>
+            )}
+            {qrStatus === "error" && (
+              <div className="text-center py-6">
+                <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-2 dark:bg-red-500/10">
+                  <XCircleIcon className="w-6 h-6 text-red-500" />
+                </div>
+                <Text className="font-medium">Connection failed</Text>
+                <Text className="text-xs mt-0.5">VPS may be unreachable. Try again.</Text>
+              </div>
+            )}
+          </div>
+
+          <Button variant="secondary" className="w-full mt-2" onClick={closeQr}>Close</Button>
+        </DialogPanel>
       </Dialog>
     </div>
   );

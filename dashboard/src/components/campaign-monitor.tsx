@@ -2,18 +2,13 @@
 
 import { useMemo, useState } from "react";
 import {
-  ArrowLeft, Square, Loader2, Send, CheckCheck, MessageSquareReply, AlertTriangle,
-  Clock, Activity, Play, Pause,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+  Card, Title, Text, Metric, Badge, Button, ProgressBar, Grid, Col, Flex,
+} from "@tremor/react";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+  ArrowLeftIcon, StopIcon, PaperAirplaneIcon, CheckCircleIcon,
+  ChatBubbleLeftRightIcon, ExclamationTriangleIcon, ClockIcon,
+  PlayIcon, PauseIcon,
+} from "@heroicons/react/24/outline";
 import {
   type Campaign, type NumberInfo, type ReplyItem,
   getNumberHealth, healthColor, healthText,
@@ -41,25 +36,37 @@ function timeAgo(iso?: string | null): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-function StatPill({ label, value, icon: Icon, accent }: {
-  label: string; value: string | number; icon: React.ComponentType<{ className?: string }>; accent?: string;
+function StatCard({ label, value, icon: Icon, color }: {
+  label: string; value: string | number;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border p-3">
-      <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", accent ? "bg-muted" : "bg-muted")}>
-        <Icon className={cn("w-4 h-4", accent)} />
-      </div>
-      <div>
-        <div className="text-xl font-semibold tabular-nums leading-tight">{value}</div>
-        <div className="text-xs text-muted-foreground">{label}</div>
-      </div>
-    </div>
+    <Card decoration="top" decorationColor={color as any}>
+      <Flex justifyContent="between" alignItems="start">
+        <div className="space-y-1">
+          <Text>{label}</Text>
+          <Metric>{value}</Metric>
+        </div>
+        <div className="w-10 h-10 rounded-tremor-default bg-tremor-background-muted flex items-center justify-center dark:bg-dark-tremor-background-muted">
+          <Icon className={["w-5 h-5", colorClass(color)].join(" ")} />
+        </div>
+      </Flex>
+    </Card>
   );
 }
 
-export function CampaignMonitor({
-  campaign, numbers, totalCapacity, onStop, onStart, onBack,
-}: MonitorProps) {
+function colorClass(c: string): string {
+  switch (c) {
+    case "blue": return "text-blue-500";
+    case "emerald": return "text-emerald-500";
+    case "violet": return "text-violet-500";
+    case "red": return "text-red-500";
+    default: return "text-tremor-content dark:text-dark-tremor-content";
+  }
+}
+
+export function CampaignMonitor({ campaign, numbers, totalCapacity, onStop, onStart, onBack }: MonitorProps) {
   const [stopping, setStopping] = useState(false);
   const [starting, setStarting] = useState(false);
 
@@ -81,27 +88,28 @@ export function CampaignMonitor({
   if (!campaign) {
     return (
       <div className="space-y-6">
-        <Button variant="ghost" onClick={onBack}><ArrowLeft className="w-4 h-4" /> Back to campaigns</Button>
-        <Card><CardContent className="py-16 text-center">
-          <Activity className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-40" />
-          <p className="text-sm text-muted-foreground">No campaign selected.</p>
-        </CardContent></Card>
+        <Button variant="light" icon={ArrowLeftIcon} onClick={onBack}>Back to campaigns</Button>
+        <Card>
+          <div className="py-16 text-center">
+            <PaperAirplaneIcon className="w-10 h-10 text-tremor-content mx-auto mb-3 opacity-40 dark:text-dark-tremor-content" />
+            <Text>No campaign selected.</Text>
+          </div>
+        </Card>
       </div>
     );
   }
 
-  const total = campaign.total_recipients || campaign.total || 0;
-  const sent = campaign.sent_count || campaign.sent || 0;
-  const replies = campaign.reply_count || campaign.replies || 0;
-  const delivered = (campaign as any).delivered_count || (campaign as any).delivered || sent;
-  const failed = (campaign as any).failed_count || (campaign as any).failed || 0;
+  const total = (campaign.total_recipients ?? campaign.total ?? 0) as number;
+  const sent = (campaign.sent_count ?? campaign.sent ?? 0) as number;
+  const replies = (campaign.reply_count ?? campaign.replies ?? 0) as number;
+  const delivered = ((campaign as any).delivered_count ?? (campaign as any).delivered ?? sent) as number;
+  const failed = ((campaign as any).failed_count ?? (campaign as any).failed ?? 0) as number;
   const pct = total ? (sent / total) * 100 : 0;
   const remaining = Math.max(0, total - sent);
   const perHour = totalCapacity || 1;
   const hoursLeft = remaining / perHour;
-
-  // numbers that participated (or can)
-  const participating = numbers.filter(n => n.status !== "restricted" && n.status !== "deleted");
+  const participating = numbers.filter((n) => n.status !== "restricted" && n.status !== "deleted");
+  const isSending = campaign.status === "sending";
 
   const handleStop = async () => {
     setStopping(true);
@@ -112,166 +120,152 @@ export function CampaignMonitor({
     try { await onStart(campaign.id); } finally { setStarting(false); }
   };
 
-  const isSending = campaign.status === "sending";
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0"><ArrowLeft className="w-4 h-4" /></Button>
+      <Flex justifyContent="between" alignItems="center" className="flex-wrap gap-3">
+        <Flex justifyContent="start" className="gap-3 min-w-0">
+          <Button variant="light" size="sm" icon={ArrowLeftIcon} onClick={onBack}>Back</Button>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">{campaign.name}</h1>
-            <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
-              <Badge variant={isSending ? "default" : campaign.status === "completed" ? "success" : "secondary"} className="shrink-0">
-                {campaign.status}
-              </Badge>
-              <span className="text-xs">Started {timeAgo(campaign.started_at)}</span>
-            </p>
+            <Title className="truncate">{campaign.name}</Title>
+            <Flex justifyContent="start" className="gap-2 mt-0.5">
+              <Badge color={isSending ? "blue" : campaign.status === "completed" ? "emerald" : "slate"}>{campaign.status}</Badge>
+              <Text className="text-xs">Started {timeAgo(campaign.started_at)}</Text>
+            </Flex>
           </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {isSending ? (
-            <Button variant="destructive" onClick={handleStop} disabled={stopping} className="w-full sm:w-auto">
-              {stopping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />} Stop
-            </Button>
-          ) : campaign.status === "draft" || campaign.status === "paused" ? (
-            <Button onClick={handleStart} disabled={starting} className="w-full sm:w-auto">
-              {starting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />} Start
-            </Button>
-          ) : null}
-        </div>
-      </div>
+        </Flex>
+        {isSending ? (
+          <Button color="red" icon={StopIcon} onClick={handleStop} loading={stopping} loadingText="Stopping…">
+            {stopping ? "Stopping…" : "Stop"}
+          </Button>
+        ) : campaign.status === "draft" || campaign.status === "paused" ? (
+          <Button icon={PlayIcon} onClick={handleStart} loading={starting} loadingText="Starting…">
+            {starting ? "Starting…" : "Start"}
+          </Button>
+        ) : null}
+      </Flex>
 
       {/* Live progress */}
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              {isSending ? <Activity className="w-4 h-4 text-primary animate-pulse" /> : <Pause className="w-4 h-4 text-muted-foreground" />}
-              Live Progress
-            </CardTitle>
-            <span className="text-2xl font-semibold tabular-nums">{pct.toFixed(1)}%</span>
+        <Flex justifyContent="between" className="mb-2">
+          <div className="flex items-center gap-2">
+            {isSending
+              ? <PaperAirplaneIcon className="w-5 h-5 text-blue-500 animate-pulse" />
+              : <PauseIcon className="w-5 h-5 text-tremor-content dark:text-dark-tremor-content" />}
+            <Title className="text-lg">Live Progress</Title>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Progress value={pct} className="h-3" />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><Clock className="w-3 h-3" />
-              {remaining === 0 ? "Completed"
-                : isSending
-                  ? `ETA ~${hoursLeft < 1 ? "<1h" : `${hoursLeft.toFixed(1)}h`}`
-                  : `${remaining} remaining`}
-            </span>
-            <span>Capacity: {perHour}/hr</span>
-          </div>
-        </CardContent>
+          <Metric className="text-2xl">{pct.toFixed(1)}%</Metric>
+        </Flex>
+        <ProgressBar value={pct} color="blue" showAnimation className="mt-2" />
+        <Flex justifyContent="between" className="mt-3">
+          <Text className="text-xs flex items-center gap-1">
+            <ClockIcon className="w-3.5 h-3.5" />
+            {remaining === 0 ? "Completed"
+              : isSending ? `ETA ~${hoursLeft < 1 ? "<1h" : `${hoursLeft.toFixed(1)}h`}`
+              : `${remaining} remaining`}
+          </Text>
+          <Text className="text-xs">Capacity: {perHour}/hr</Text>
+        </Flex>
       </Card>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatPill label="Sent" value={sent} icon={Send} accent="text-primary" />
-        <StatPill label="Delivered" value={delivered} icon={CheckCheck} accent="text-blue-500" />
-        <StatPill label="Replies" value={replies} icon={MessageSquareReply} accent="text-purple-500" />
-        <StatPill label="Failed" value={failed} icon={AlertTriangle} accent="text-red-500" />
-      </div>
+      <Grid numItems={2} numItemsMd={4} className="gap-4">
+        <StatCard label="Sent" value={sent} icon={PaperAirplaneIcon} color="blue" />
+        <StatCard label="Delivered" value={delivered} icon={CheckCircleIcon} color="emerald" />
+        <StatCard label="Replies" value={replies} icon={ChatBubbleLeftRightIcon} color="violet" />
+        <StatCard label="Failed" value={failed} icon={ExclamationTriangleIcon} color="red" />
+      </Grid>
 
-      <div className="grid lg:grid-cols-3 gap-4">
+      <Grid numItems={1} numItemsLg={3} className="gap-4">
         {/* Per-number table */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Per-number breakdown</CardTitle>
-            <CardDescription className="text-xs">Each number's contribution and current status</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
+        <Col numColSpanLg={2}>
+          <Card className="h-full">
+            <Title className="text-lg mb-1">Per-number breakdown</Title>
+            <Text className="mb-3">Each number's contribution and current status</Text>
             {participating.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4">No numbers available.</p>
+              <Text className="py-4">No numbers available.</Text>
             ) : (
-              <div className="overflow-x-auto -mx-1 px-1">
-                <Table className="min-w-[560px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Number</TableHead>
-                      <TableHead>Health</TableHead>
-                      <TableHead className="text-right">Sent</TableHead>
-                      <TableHead className="text-right">Replies</TableHead>
-                      <TableHead className="text-right">Failed</TableHead>
-                      <TableHead className="text-right">Today</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {participating.map(n => {
+              <div className="overflow-x-auto">
+                <table className="w-full text-tremor-default text-tremor-content dark:text-dark-tremor-content min-w-[560px]">
+                  <thead>
+                    <tr className="border-b border-tremor-border dark:border-dark-tremor-border text-left">
+                      <th className="whitespace-nowrap text-left font-semibold px-4 py-3 text-tremor-content-strong dark:text-dark-tremor-content-strong">Number</th>
+                      <th className="whitespace-nowrap text-left font-semibold px-4 py-3 text-tremor-content-strong dark:text-dark-tremor-content-strong">Health</th>
+                      <th className="whitespace-nowrap text-right font-semibold px-4 py-3 text-tremor-content-strong dark:text-dark-tremor-content-strong">Sent</th>
+                      <th className="whitespace-nowrap text-right font-semibold px-4 py-3 text-tremor-content-strong dark:text-dark-tremor-content-strong">Replies</th>
+                      <th className="whitespace-nowrap text-right font-semibold px-4 py-3 text-tremor-content-strong dark:text-dark-tremor-content-strong">Failed</th>
+                      <th className="whitespace-nowrap text-right font-semibold px-4 py-3 text-tremor-content-strong dark:text-dark-tremor-content-strong">Today</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {participating.map((n) => {
                       const stats = perNumberMap[n.instance] || { sent: 0, replies: 0, failed: 0 };
                       const h = getNumberHealth(n);
                       return (
-                        <TableRow key={n.instance}>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium">{n.displayName}</span>
-                              <span className="text-xs text-muted-foreground">{n.phone}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
+                        <tr key={n.instance} className="border-b border-tremor-border last:border-0 dark:border-dark-tremor-border">
+                          <td className="px-4 py-3">
+                            <div className="text-sm font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">{n.displayName}</div>
+                            <div className="text-xs text-tremor-content dark:text-dark-tremor-content">{n.phone}</div>
+                          </td>
+                          <td className="px-4 py-3">
                             <span className="inline-flex items-center gap-1.5 text-xs">
-                              <span className={cn("w-2 h-2 rounded-full", healthColor(h))} />
+                              <span className={["w-2 h-2 rounded-full", healthColor(h)].join(" ")} />
                               {healthText(h)}
                             </span>
-                          </TableCell>
-                          <TableCell className="text-right tabular-nums font-medium">{stats.sent}</TableCell>
-                          <TableCell className="text-right tabular-nums text-blue-500">{stats.replies}</TableCell>
-                          <TableCell className="text-right tabular-nums text-red-500">{stats.failed}</TableCell>
-                          <TableCell className="text-right tabular-nums text-xs">
-                            {n.msgsToday}<span className="text-muted-foreground">/{n.effectiveLimit}</span>
-                          </TableCell>
-                        </TableRow>
+                          </td>
+                          <td className="px-4 py-3 text-right tabular-nums font-medium">{stats.sent}</td>
+                          <td className="px-4 py-3 text-right tabular-nums text-blue-500">{stats.replies}</td>
+                          <td className="px-4 py-3 text-right tabular-nums text-red-500">{stats.failed}</td>
+                          <td className="px-4 py-3 text-right tabular-nums text-xs">
+                            {n.msgsToday}<span className="text-tremor-content dark:text-dark-tremor-content">/{n.effectiveLimit}</span>
+                          </td>
+                        </tr>
                       );
                     })}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </Card>
+        </Col>
 
         {/* Live reply feed */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <MessageSquareReply className="w-4 h-4 text-blue-500" />
-              Live Replies
-            </CardTitle>
-            <CardDescription className="text-xs">{liveReplies.length} received</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
+        <Col numColSpanLg={1}>
+          <Card className="h-full">
+            <Flex justifyContent="between" className="mb-2">
+              <div className="flex items-center gap-2">
+                <ChatBubbleLeftRightIcon className="w-5 h-5 text-blue-500" />
+                <Title className="text-lg">Live Replies</Title>
+              </div>
+              <Badge color="slate">{liveReplies.length}</Badge>
+            </Flex>
             {liveReplies.length === 0 ? (
               <div className="text-center py-10">
-                <MessageSquareReply className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-40" />
-                <p className="text-sm text-muted-foreground">No replies yet.</p>
+                <ChatBubbleLeftRightIcon className="w-8 h-8 text-tremor-content mx-auto mb-2 opacity-40 dark:text-dark-tremor-content" />
+                <Text>No replies yet.</Text>
               </div>
             ) : (
-              <div className="space-y-1 max-h-[360px] overflow-y-auto -mx-2 px-1">
+              <div className="space-y-1 max-h-[360px] overflow-y-auto">
                 {liveReplies.map((r, i) => (
-                  <div key={i} className="flex items-start gap-3 py-2 px-2 rounded-md hover:bg-accent/40 transition-colors">
-                    <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
-                      <MessageSquareReply className="w-3.5 h-3.5 text-blue-500" />
+                  <Flex key={i} justifyContent="start" className="gap-3 py-2 px-2 rounded-tremor-default hover:bg-tremor-background-muted transition-colors dark:hover:bg-dark-tremor-background-muted">
+                    <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center shrink-0 dark:bg-blue-500/10">
+                      <ChatBubbleLeftRightIcon className="w-3.5 h-3.5 text-blue-500" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-sm font-medium truncate">{r.name || r.phone}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">{timeAgo(r.receivedAt)}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate font-mono">{r.phone}</p>
+                      <Flex justifyContent="between" alignItems="baseline">
+                        <Text className="text-sm font-medium truncate">{r.name || r.phone}</Text>
+                        <Text className="text-xs text-tremor-content dark:text-dark-tremor-content shrink-0 ml-2">{timeAgo(r.receivedAt)}</Text>
+                      </Flex>
+                      <Text className="text-xs text-tremor-content truncate font-mono dark:text-dark-tremor-content">{r.phone}</Text>
                     </div>
-                  </div>
+                  </Flex>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </Card>
+        </Col>
+      </Grid>
 
-      <Separator />
-
-      <Button variant="ghost" onClick={onBack}><ArrowLeft className="w-4 h-4" /> Back to campaigns</Button>
+      <Button variant="light" icon={ArrowLeftIcon} onClick={onBack}>Back to campaigns</Button>
     </div>
   );
 }
