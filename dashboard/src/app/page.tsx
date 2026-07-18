@@ -11,10 +11,10 @@ import {
 import {
   type NumberInfo, type Campaign, type ReplyItem, type StatusResponse,
 } from "@/lib/types";
-import { Overview } from "@//components/overview";
-import { Numbers } from "@//components/numbers";
-import { Campaigns } from "@//components/campaigns";
-import { CampaignMonitor } from "@//components/campaign-monitor";
+import { Overview } from "@/components/overview";
+import { Numbers } from "@/components/numbers";
+import { Campaigns } from "@/components/campaigns";
+import { CampaignMonitor } from "@/components/campaign-monitor";
 
 type Tab = "overview" | "numbers" | "campaigns";
 
