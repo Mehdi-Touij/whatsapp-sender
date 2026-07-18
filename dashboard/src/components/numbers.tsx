@@ -79,8 +79,8 @@ function NumberCard({ n, onDelete }: { n: NumberInfo; onDelete: () => void }) {
               : n.warmupStatus === "warmup" ? <Badge variant="warning">Warmup D{n.warmupDay}/3</Badge>
               : n.status === "connecting" ? <Badge variant="secondary">Connecting</Badge>
               : <Badge variant="success">Active</Badge>}
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onDelete}>
-              <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onDelete} aria-label="Delete number">
+              <Trash2 className="w-4 h-4 text-muted-foreground" />
             </Button>
           </div>
         </div>
@@ -178,9 +178,9 @@ export function Numbers({ numbers, onAddNumber, onDeleteNumber }: NumbersProps) 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Numbers</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Numbers</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage your WhatsApp numbers and warmup</p>
         </div>
         <Button onClick={() => setOpen(true)}>
@@ -233,9 +233,9 @@ export function Numbers({ numbers, onAddNumber, onDeleteNumber }: NumbersProps) 
               </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={!name.trim() || busy}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={handleAdd} disabled={!name.trim() || busy} className="w-full sm:w-auto">
               {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</> : <><QrCode className="w-4 h-4" /> Generate QR</>}
             </Button>
           </DialogFooter>

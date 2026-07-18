@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Moon, Sun, Activity, Phone, Send, RefreshCw, X, QrCode } from "lucide-react";
+import { Moon, Sun, Activity, Phone, Send, RefreshCw, X, QrCode, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState<{ kind: "error" | "info"; msg: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [polling, setPolling] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // QR modal (separate from Numbers' dialog — for the QR display flow)
   const [qrModal, setQrModal] = useState<{ name: string; qrUrl: string; instance: string } | null>(null);
@@ -233,27 +234,68 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="w-60 border-r bg-card flex flex-col p-3 gap-1 shrink-0">
-        <div className="px-3 py-4 mb-2 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">W</div>
-          <div className="flex flex-col">
-            <span className="font-semibold text-sm leading-tight">WhatsApp Sender</span>
-            <span className="text-xs text-muted-foreground leading-tight">Control panel</span>
+      {/* Mobile top bar (visible only on small screens) */}
+      <header className="md:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b bg-card">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="inline-flex items-center justify-center w-11 h-11 -ml-2 rounded-md text-foreground hover:bg-accent"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs">W</div>
+          <span className="font-semibold text-sm">WhatsApp Sender</span>
+        </div>
+        <Button variant="outline" size="icon" className="h-9 w-9" onClick={manualRefresh} disabled={refreshing} aria-label="Refresh">
+          <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+        </Button>
+      </header>
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar (off-canvas on mobile, static on md+) */}
+      <aside
+        className={cn(
+          "fixed md:sticky top-0 left-0 z-50 md:z-auto h-screen md:h-auto w-64 border-r bg-card flex flex-col p-3 gap-1 shrink-0 transition-transform duration-200 ease-out",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}
+      >
+        <div className="px-3 py-4 mb-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">W</div>
+            <div className="flex flex-col min-w-0">
+              <span className="font-semibold text-sm leading-tight truncate">WhatsApp Sender</span>
+              <span className="text-xs text-muted-foreground leading-tight">Control panel</span>
+            </div>
           </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden inline-flex items-center justify-center w-11 h-11 -mr-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground shrink-0"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
         {navItems.map(item => (
           <button
             key={item.id}
-            onClick={() => { setTab(item.id); setMonitorCampaign(null); }}
+            onClick={() => { setTab(item.id); setMonitorCampaign(null); setSidebarOpen(false); }}
             className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full",
+              "flex items-center gap-3 px-3 min-h-[44px] rounded-md text-sm font-medium transition-colors w-full text-left",
               tab === item.id && !monitorCampaign
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             )}
           >
-            <item.icon className="w-4 h-4" /> {item.label}
+            <item.icon className="w-4 h-4 shrink-0" /> {item.label}
           </button>
         ))}
 
@@ -263,11 +305,11 @@ export default function Dashboard() {
               <span className={cn("w-1.5 h-1.5 rounded-full", totalCapacity > 0 ? "bg-green-500" : "bg-red-500")} />
               {numbers.length === 0 ? "No VPS" : `${totalCapacity}/day`}
             </span>
-            <Button variant="outline" size="icon" className="h-7 w-7" onClick={manualRefresh} disabled={refreshing} title="Refresh">
-              <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+            <Button variant="outline" size="icon" className="h-9 w-9" onClick={manualRefresh} disabled={refreshing} title="Refresh">
+              <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={toggleTheme} className="gap-2 w-full">
+          <Button variant="outline" size="sm" onClick={toggleTheme} className="gap-2 w-full min-h-[40px]">
             {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             {theme === "dark" ? "Light" : "Dark"}
           </Button>
@@ -275,7 +317,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 p-6 md:p-8 max-w-6xl overflow-x-hidden">
+      <main className="flex-1 p-4 md:p-6 md:max-w-6xl overflow-x-hidden min-w-0">
         {toast && (
           <div
             className={cn(
@@ -285,8 +327,8 @@ export default function Dashboard() {
                 : "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400"
             )}
           >
-            <span>{toast.msg}</span>
-            <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100">
+            <span className="min-w-0">{toast.msg}</span>
+            <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100 inline-flex items-center justify-center w-9 h-9 -mr-2 shrink-0" aria-label="Dismiss">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -345,12 +387,12 @@ export default function Dashboard() {
             className="bg-background border rounded-lg shadow-lg max-w-sm w-full p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
                 <h3 className="font-semibold flex items-center gap-2"><QrCode className="w-4 h-4" /> Linking {qrModal.name}</h3>
                 <p className="text-xs text-muted-foreground mt-1">Open WhatsApp → Settings → Linked Devices → Link a Device</p>
               </div>
-              <button onClick={() => setQrModal(null)} className="text-muted-foreground hover:text-foreground">
+              <button onClick={() => setQrModal(null)} className="text-muted-foreground hover:text-foreground inline-flex items-center justify-center w-9 h-9 -mr-2 -mt-2 shrink-0" aria-label="Close">
                 <X className="w-4 h-4" />
               </button>
             </div>

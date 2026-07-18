@@ -138,7 +138,7 @@ export function Overview({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Overview</h1>
         <p className="text-sm text-muted-foreground mt-1">Real-time messaging stats across all numbers</p>
       </div>
 
@@ -205,7 +205,7 @@ export function Overview({
                     </button>
                   </div>
                   <Progress value={pct} className="h-2" />
-                  <div className="grid grid-cols-4 gap-3 text-center">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                     <div>
                       <div className="text-xl font-semibold tabular-nums">{sent}</div>
                       <div className="text-xs text-muted-foreground">Sent</div>
@@ -287,7 +287,8 @@ export function Overview({
           {numbers.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4">No numbers connected.</p>
           ) : (
-            <Table>
+            <div className="overflow-x-auto -mx-1 px-1">
+              <Table className="min-w-[560px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Number</TableHead>
@@ -337,6 +338,7 @@ export function Overview({
                 })}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -358,13 +360,13 @@ export function Overview({
                   <div
                     key={c.id}
                     onClick={() => onOpenCampaign(c)}
-                    className="flex items-center justify-between py-3 cursor-pointer hover:bg-accent/40 -mx-2 px-2 rounded-md transition-colors"
+                    className="flex items-center justify-between gap-3 py-3 cursor-pointer hover:bg-accent/40 -mx-2 px-2 rounded-md transition-colors"
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-medium truncate">{c.name}</div>
                       <div className="text-xs text-muted-foreground">{timeAgo(c.started_at || null)}</div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
                       <Badge variant={c.status === "sending" ? "default" : c.status === "completed" ? "success" : "secondary"}>
                         {c.status}
                       </Badge>

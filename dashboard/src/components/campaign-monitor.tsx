@@ -118,11 +118,11 @@ export function CampaignMonitor({
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="w-4 h-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0"><ArrowLeft className="w-4 h-4" /></Button>
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold tracking-tight truncate">{campaign.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">{campaign.name}</h1>
             <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
-              <Badge variant={isSending ? "default" : campaign.status === "completed" ? "success" : "secondary"}>
+              <Badge variant={isSending ? "default" : campaign.status === "completed" ? "success" : "secondary"} className="shrink-0">
                 {campaign.status}
               </Badge>
               <span className="text-xs">Started {timeAgo(campaign.started_at)}</span>
@@ -131,11 +131,11 @@ export function CampaignMonitor({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {isSending ? (
-            <Button variant="destructive" onClick={handleStop} disabled={stopping}>
+            <Button variant="destructive" onClick={handleStop} disabled={stopping} className="w-full sm:w-auto">
               {stopping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />} Stop
             </Button>
           ) : campaign.status === "draft" || campaign.status === "paused" ? (
-            <Button onClick={handleStart} disabled={starting}>
+            <Button onClick={handleStart} disabled={starting} className="w-full sm:w-auto">
               {starting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />} Start
             </Button>
           ) : null}
@@ -186,46 +186,48 @@ export function CampaignMonitor({
             {participating.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4">No numbers available.</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Number</TableHead>
-                    <TableHead>Health</TableHead>
-                    <TableHead className="text-right">Sent</TableHead>
-                    <TableHead className="text-right">Replies</TableHead>
-                    <TableHead className="text-right">Failed</TableHead>
-                    <TableHead className="text-right">Today</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {participating.map(n => {
-                    const stats = perNumberMap[n.instance] || { sent: 0, replies: 0, failed: 0 };
-                    const h = getNumberHealth(n);
-                    return (
-                      <TableRow key={n.instance}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">{n.displayName}</span>
-                            <span className="text-xs text-muted-foreground">{n.phone}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="inline-flex items-center gap-1.5 text-xs">
-                            <span className={cn("w-2 h-2 rounded-full", healthColor(h))} />
-                            {healthText(h)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums font-medium">{stats.sent}</TableCell>
-                        <TableCell className="text-right tabular-nums text-blue-500">{stats.replies}</TableCell>
-                        <TableCell className="text-right tabular-nums text-red-500">{stats.failed}</TableCell>
-                        <TableCell className="text-right tabular-nums text-xs">
-                          {n.msgsToday}<span className="text-muted-foreground">/{n.effectiveLimit}</span>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <div className="overflow-x-auto -mx-1 px-1">
+                <Table className="min-w-[560px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Number</TableHead>
+                      <TableHead>Health</TableHead>
+                      <TableHead className="text-right">Sent</TableHead>
+                      <TableHead className="text-right">Replies</TableHead>
+                      <TableHead className="text-right">Failed</TableHead>
+                      <TableHead className="text-right">Today</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {participating.map(n => {
+                      const stats = perNumberMap[n.instance] || { sent: 0, replies: 0, failed: 0 };
+                      const h = getNumberHealth(n);
+                      return (
+                        <TableRow key={n.instance}>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">{n.displayName}</span>
+                              <span className="text-xs text-muted-foreground">{n.phone}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center gap-1.5 text-xs">
+                              <span className={cn("w-2 h-2 rounded-full", healthColor(h))} />
+                              {healthText(h)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums font-medium">{stats.sent}</TableCell>
+                          <TableCell className="text-right tabular-nums text-blue-500">{stats.replies}</TableCell>
+                          <TableCell className="text-right tabular-nums text-red-500">{stats.failed}</TableCell>
+                          <TableCell className="text-right tabular-nums text-xs">
+                            {n.msgsToday}<span className="text-muted-foreground">/{n.effectiveLimit}</span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

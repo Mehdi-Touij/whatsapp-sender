@@ -166,7 +166,7 @@ export function Campaigns({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Campaigns</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Campaigns</h1>
           <p className="text-sm text-muted-foreground mt-1">Create and manage messaging campaigns</p>
         </div>
 
@@ -174,23 +174,23 @@ export function Campaigns({
         {activeCampaign && (
           <Card className="border-primary/30">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Send className="w-4 h-4 text-primary" /> {activeCampaign.name}
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <CardTitle className="text-base flex items-center gap-2 min-w-0">
+                    <Send className="w-4 h-4 text-primary shrink-0" /> <span className="truncate">{activeCampaign.name}</span>
                   </CardTitle>
                   <CardDescription className="text-xs mt-0.5">
                     {activeCampaign.status === "sending" ? "Live campaign in progress" : "Campaign ready"}
                   </CardDescription>
                 </div>
-                <Badge variant={activeCampaign.status === "sending" ? "default" : "secondary"}>{activeCampaign.status}</Badge>
+                <Badge variant={activeCampaign.status === "sending" ? "default" : "secondary"} className="shrink-0">{activeCampaign.status}</Badge>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="grid grid-cols-3 gap-4 mb-3">
-                <div><div className="text-xl font-semibold tabular-nums">{activeCampaign.total_recipients || activeCampaign.total || 0}</div><div className="text-xs text-muted-foreground">Total</div></div>
-                <div><div className="text-xl font-semibold tabular-nums text-primary">{activeCampaign.sent_count || activeCampaign.sent || 0}</div><div className="text-xs text-muted-foreground">Sent</div></div>
-                <div><div className="text-xl font-semibold tabular-nums text-blue-500">{activeCampaign.reply_count || activeCampaign.replies || 0}</div><div className="text-xs text-muted-foreground">Replies</div></div>
+                <div><div className="text-lg sm:text-xl font-semibold tabular-nums">{activeCampaign.total_recipients || activeCampaign.total || 0}</div><div className="text-xs text-muted-foreground">Total</div></div>
+                <div><div className="text-lg sm:text-xl font-semibold tabular-nums text-primary">{activeCampaign.sent_count || activeCampaign.sent || 0}</div><div className="text-xs text-muted-foreground">Sent</div></div>
+                <div><div className="text-lg sm:text-xl font-semibold tabular-nums text-blue-500">{activeCampaign.reply_count || activeCampaign.replies || 0}</div><div className="text-xs text-muted-foreground">Replies</div></div>
               </div>
               <Button variant="outline" size="sm" onClick={() => onOpenCampaign(activeCampaign)}>Open monitor →</Button>
             </CardContent>
@@ -205,7 +205,7 @@ export function Campaigns({
             </div>
             <h3 className="font-medium">Create a new campaign</h3>
             <p className="text-sm text-muted-foreground mt-1 mb-4">4-step wizard: name, recipients, message, review.</p>
-            <Button onClick={openWizard}><Send className="w-4 h-4" /> Start wizard</Button>
+            <Button onClick={openWizard} className="w-full sm:w-auto"><Send className="w-4 h-4" /> Start wizard</Button>
           </CardContent>
         </Card>
 
@@ -223,12 +223,12 @@ export function Campaigns({
                   const sent = c.sent_count || c.sent || 0;
                   const replies = c.reply_count || c.replies || 0;
                   return (
-                    <div key={c.id} onClick={() => onOpenCampaign(c)} className="flex items-center justify-between py-3 cursor-pointer hover:bg-accent/40 -mx-2 px-2 rounded-md transition-colors">
+                    <div key={c.id} onClick={() => onOpenCampaign(c)} className="flex items-center justify-between gap-3 py-3 cursor-pointer hover:bg-accent/40 -mx-2 px-2 rounded-md transition-colors">
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">{c.name}</div>
                         <div className="text-xs text-muted-foreground">{timeAgo(c.started_at)}</div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
                         <Badge variant={c.status === "sending" ? "default" : c.status === "completed" ? "success" : "secondary"}>{c.status}</Badge>
                         <span className="text-xs text-muted-foreground tabular-nums">{sent}/{total} · {replies} replies</span>
                       </div>
@@ -246,23 +246,23 @@ export function Campaigns({
   // ===== Wizard =====
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">New Campaign</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">New Campaign</h1>
           <p className="text-sm text-muted-foreground mt-1">Step {step} of 4 — {STEPS[step - 1].label}</p>
         </div>
         <Button variant="ghost" onClick={() => setWizardOpen(false)}>Cancel</Button>
       </div>
 
       {/* Step indicator */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 pb-1">
         {STEPS.map((s, i) => {
           const done = step > s.id;
           const active = step === s.id;
           return (
-            <div key={s.id} className="flex items-center gap-2">
+            <div key={s.id} className="flex items-center gap-2 shrink-0">
               <div className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap",
                 active ? "bg-primary text-primary-foreground"
                 : done ? "bg-primary/10 text-primary"
                 : "bg-muted text-muted-foreground"
@@ -277,7 +277,7 @@ export function Campaigns({
       </div>
 
       <Card>
-        <CardContent className="p-6 min-h-[320px]">
+        <CardContent className="p-4 sm:p-6 min-h-[320px]">
           {/* Step 1 */}
           {step === 1 && (
             <div className="space-y-4 max-w-md">
@@ -300,7 +300,7 @@ export function Campaigns({
               <div>
                 <Label>Upload recipients CSV</Label>
                 <p className="text-xs text-muted-foreground mt-0.5 mb-2">Format: <code className="bg-muted px-1.5 py-0.5 rounded">phone,name</code> — one per line.</p>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <input
                     ref={fileInputRef} type="file" accept=".csv"
                     className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
@@ -309,7 +309,7 @@ export function Campaigns({
                     <Upload className="w-4 h-4" /> {file ? "Change file" : "Choose CSV"}
                   </Button>
                   {file && (
-                    <span className="text-sm text-muted-foreground flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
                       <FileText className="w-3.5 h-3.5" /> {file.name}
                       {parsing ? <Loader2 className="w-3 h-3 animate-spin" /> :
                         <Badge variant="secondary">{recipients.length} recipients</Badge>}
@@ -320,12 +320,12 @@ export function Campaigns({
 
               {recipients.length > 0 && (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <Label>Preview (first 10)</Label>
                     <span className="text-xs text-muted-foreground">Total: <span className="font-medium text-foreground">{recipients.length}</span></span>
                   </div>
-                  <div className="border rounded-md">
-                    <Table>
+                  <div className="border rounded-md overflow-x-auto">
+                    <Table className="min-w-[320px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-12">#</TableHead>
@@ -409,7 +409,7 @@ export function Campaigns({
             <div className="space-y-5">
               {!created ? (
                 <>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="rounded-lg border p-3">
                       <div className="text-xs text-muted-foreground">Recipients</div>
                       <div className="text-2xl font-semibold mt-1 tabular-nums">{recipients.length}</div>
@@ -447,8 +447,8 @@ export function Campaigns({
 
                   <div>
                     <Label className="text-xs uppercase tracking-wider">Per-number breakdown</Label>
-                    <div className="border rounded-md mt-2">
-                      <Table>
+                    <div className="border rounded-md mt-2 overflow-x-auto">
+                      <Table className="min-w-[480px]">
                         <TableHeader>
                           <TableRow>
                             <TableHead>Number</TableHead>
@@ -478,7 +478,7 @@ export function Campaigns({
                   </div>
 
                   <div className="flex justify-end gap-2">
-                    <Button onClick={doUpload} disabled={uploading || usableNumbers.length === 0}>
+                    <Button onClick={doUpload} disabled={uploading || usableNumbers.length === 0} className="w-full sm:w-auto">
                       {uploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : <><Check className="w-4 h-4" /> Create campaign</>}
                     </Button>
                   </div>
@@ -495,7 +495,7 @@ export function Campaigns({
                       Ready to start sending.
                     </p>
                   </div>
-                  <Button onClick={startIt} size="lg"><Play className="w-4 h-4" /> Start campaign now</Button>
+                  <Button onClick={startIt} size="lg" className="w-full sm:w-auto"><Play className="w-4 h-4" /> Start campaign now</Button>
                 </div>
               )}
             </div>
