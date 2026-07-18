@@ -1,34 +1,55 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #171717;
-  --color-surface: #1c1c1c;
-  --color-card: #1a1a1a;
-  --color-border: #2e2e2e;
-  --color-border-hover: #363636;
-  --color-text: #fafafa;
-  --color-text-secondary: #b4b4b4;
-  --color-text-muted: #898989;
   --color-accent: #3ecf8e;
   --color-accent-hover: #00c573;
-  --color-danger: #ef4444;
-  --color-warning: #f59e0b;
-  --color-success: #22c55e;
-  --color-info: #3b82f6;
-  --color-purple: #a855f7;
+}
+
+/* ====== LIGHT THEME (default) ====== */
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --border-hover: #d1d5db;
+  --text: #171717;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --sidebar-bg: #ffffff;
+  --input-bg: #f9fafb;
+  --input-border: #e5e7eb;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ====== DARK THEME ====== */
+.dark {
+  --bg: #171717;
+  --surface: #1c1c1c;
+  --card: #1a1a1a;
+  --border: #2e2e2e;
+  --border-hover: #363636;
+  --text: #fafafa;
+  --text-secondary: #b4b4b4;
+  --text-muted: #898989;
+  --sidebar-bg: #1a1a1a;
+  --input-bg: #171717;
+  --input-border: #2e2e2e;
+  --shadow: none;
+  --shadow-lg: none;
 }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--bg);
+  color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #171717; }
-::-webkit-scrollbar-thumb { background: #2e2e2e; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #363636; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
 
-/* Transitions */
-* { transition: background 0.15s, border-color 0.15s, color 0.15s; }
+/* Utility classes using CSS vars */
+.themable { transition: background 0.2s, border-color 0.2s, color 0.2s; }
