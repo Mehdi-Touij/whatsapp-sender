@@ -1,6 +1,8 @@
 // CSV upload endpoint — accepts CSV with phone numbers and names
+// Fixed: recipients are per-campaign, not global
+// Added: checks global opt-out list
 import { NextRequest, NextResponse } from "next/server";
-import { createCampaign, addRecipient } from "@/lib/db";
+import { query, createCampaign, addRecipient } from "@/lib/db";
 import { randomUUID } from "crypto";
 
 export async function POST(req: NextRequest) {
@@ -32,11 +34,30 @@ export async function POST(req: NextRequest) {
     const campaignId = randomUUID();
     await createCampaign(campaignId, campaignName, messageTemplate);
 
+    let added = 0;
+    let skippedOptOut = 0;
+
     for (const r of recipients) {
+      // Check if this phone is in the global opt-out list
+      const optOutResult = await query(
+        "SELECT 1 FROM opt_out_list WHERE phone = $1",
+        [r.phone]
+      );
+      if (optOutResult.rows.length > 0) {
+        skippedOptOut++;
+        continue;
+      }
+
       await addRecipient(r.phone, r.name, campaignId);
+      added++;
     }
 
-    return NextResponse.json({ campaignId, count: recipients.length });
+    return NextResponse.json({
+      campaignId,
+      count: added,
+      skippedOptOut,
+      total: recipients.length,
+    });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

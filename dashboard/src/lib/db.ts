@@ -94,10 +94,10 @@ export async function createCampaign(id: string, name: string, messageTemplate: 
   );
 }
 
-// Add recipient
+// Add recipient — per-campaign (not global)
 export async function addRecipient(phone: string, name: string, campaignId: string) {
   await query(
-    "INSERT INTO recipients (phone, name, status, campaign_id) VALUES ($1, $2, $3, $4) ON CONFLICT (phone) DO UPDATE SET campaign_id = $4",
+    "INSERT INTO recipients (phone, name, status, campaign_id) VALUES ($1, $2, $3, $4) ON CONFLICT (phone, campaign_id) DO UPDATE SET status = $3",
     [phone, name, "pending", campaignId]
   );
 }
@@ -106,4 +106,56 @@ export async function addRecipient(phone: string, name: string, campaignId: stri
 export async function getCampaigns() {
   const result = await query("SELECT * FROM campaigns ORDER BY created_at DESC LIMIT 20");
   return result.rows;
+}
+
+// Get non-responders for a campaign (sent but not replied)
+export async function getNonResponders(campaignId: string) {
+  const result = await query(
+    "SELECT phone, name FROM recipients WHERE campaign_id = $1 AND status = 'sent'",
+    [campaignId]
+  );
+  return result.rows;
+}
+
+// Create follow-up campaign from non-responders
+export async function createFollowupCampaign(originalCampaignId: string, followupName: string, messageTemplate: string) {
+  const { randomUUID } = await import("crypto");
+  const newId = randomUUID();
+  
+  // Create the campaign
+  await createCampaign(newId, followupName, messageTemplate);
+  
+  // Copy non-responders from original campaign
+  await query(
+    `INSERT INTO recipients (phone, name, status, campaign_id)
+     SELECT phone, name, 'pending', $1
+     FROM recipients
+     WHERE campaign_id = $2 AND status = 'sent'
+     ON CONFLICT (phone, campaign_id) DO NOTHING`,
+    [newId, originalCampaignId]
+  );
+  
+  // Get count
+  const countResult = await query("SELECT COUNT(*) FROM recipients WHERE campaign_id = $1", [newId]);
+  return { id: newId, count: parseInt(countResult.rows[0].count) };
+}
+
+// Save message template
+export async function saveTemplate(name: string, content: string) {
+  const { randomUUID } = await import("crypto");
+  const id = randomUUID();
+  await query("INSERT INTO message_templates (id, name, content) VALUES ($1, $2, $3)", [id, name, content]);
+  return id;
+}
+
+// Get all templates
+export async function getTemplates() {
+  const result = await query("SELECT * FROM message_templates ORDER BY created_at DESC");
+  return result.rows;
+}
+
+// Get opt-out count
+export async function getOptOutCount() {
+  const result = await query("SELECT COUNT(*) FROM opt_out_list");
+  return parseInt(result.rows[0].count);
 }
