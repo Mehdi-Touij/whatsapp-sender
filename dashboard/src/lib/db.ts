@@ -159,3 +159,171 @@ export async function getOptOutCount() {
   const result = await query("SELECT COUNT(*) FROM opt_out_list");
   return parseInt(result.rows[0].count);
 }
+
+// ===== Contacts (global address book — populated via webhook or CSV) =====
+
+// Ensure the contacts table exists (idempotent). Called lazily by API routes
+// so we don't need a separate migration step.
+export async function ensureContactsTable() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS contacts (
+      id TEXT PRIMARY KEY,
+      phone TEXT NOT NULL,
+      name TEXT,
+      source TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      notes TEXT
+    )
+  `);
+  // Helpful indexes for the table view (safe to run repeatedly)
+  await query("CREATE INDEX IF NOT EXISTS contacts_status_idx ON contacts (status)");
+  await query("CREATE INDEX IF NOT EXISTS contacts_phone_idx ON contacts (phone)");
+  await query("CREATE INDEX IF NOT EXISTS contacts_created_at_idx ON contacts (created_at DESC)");
+}
+
+export interface Contact {
+  id: string;
+  phone: string;
+  name: string | null;
+  source: string | null;
+  status: string;
+  created_at: string | null;
+  notes: string | null;
+}
+
+// Insert a single contact. Returns the row. Upserts on phone so webhook
+// re-sends don't create duplicates.
+export async function addContact(input: {
+  phone: string;
+  name?: string | null;
+  source?: string | null;
+  notes?: string | null;
+}): Promise<Contact> {
+  await ensureContactsTable();
+  const { randomUUID } = await import("crypto");
+  const id = randomUUID();
+  const phone = input.phone.replace(/\s/g, "").replace(/^\+/, "");
+  const result = await query(
+    `INSERT INTO contacts (id, phone, name, source, status, notes)
+     VALUES ($1, $2, $3, $4, 'pending', $5)
+     ON CONFLICT (phone) DO UPDATE
+       SET name = COALESCE(EXCLUDED.name, contacts.name),
+           source = COALESCE(EXCLUDED.source, contacts.source),
+           notes = COALESCE(EXCLUDED.notes, contacts.notes)
+     RETURNING *`,
+    [id, phone, input.name ?? null, input.source ?? null, input.notes ?? null]
+  );
+  return result.rows[0] as Contact;
+}
+
+// Bulk insert. Uses a single transaction for speed. Skips empties + normalises phone.
+export async function addContactsBulk(
+  items: { phone: string; name?: string | null; source?: string | null; notes?: string | null }[],
+  defaultSource?: string | null
+): Promise<{ inserted: number; skipped: number }> {
+  await ensureContactsTable();
+  const { randomUUID } = await import("crypto");
+
+  const clean = items
+    .map((it) => ({
+      phone: (it.phone || "").replace(/\s/g, "").replace(/^\+/, ""),
+      name: it.name ?? null,
+      source: it.source ?? defaultSource ?? null,
+      notes: it.notes ?? null,
+    }))
+    .filter((c) => c.phone.length > 0);
+
+  if (clean.length === 0) return { inserted: 0, skipped: items.length };
+
+  const conn = await pool.connect();
+  try {
+    await conn.query("BEGIN");
+    let inserted = 0;
+    for (const c of clean) {
+      const id = randomUUID();
+      const res = await conn.query(
+        `INSERT INTO contacts (id, phone, name, source, status, notes)
+         VALUES ($1, $2, $3, $4, 'pending', $5)
+         ON CONFLICT (phone) DO NOTHING
+         RETURNING id`,
+        [id, c.phone, c.name, c.source, c.notes]
+      );
+      if (res.rowCount && res.rowCount > 0) inserted++;
+    }
+    await conn.query("COMMIT");
+    return { inserted, skipped: clean.length - inserted };
+  } catch (e) {
+    await conn.query("ROLLBACK");
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+export interface ListContactsResult {
+  contacts: Contact[];
+  total: number;
+}
+
+// Paginated + filtered list for the table view.
+export async function listContacts(opts: {
+  search?: string;
+  status?: string; // 'all' or one of pending/sent/replied/stopped
+  limit?: number;
+  offset?: number;
+}): Promise<ListContactsResult> {
+  await ensureContactsTable();
+  const limit = Math.max(1, Math.min(500, opts.limit ?? 50));
+  const offset = Math.max(0, opts.offset ?? 0);
+  const status = opts.status && opts.status !== "all" ? opts.status : null;
+  const search = opts.search?.trim() || null;
+
+  const where: string[] = [];
+  const params: any[] = [];
+  if (status) {
+    params.push(status);
+    where.push(`status = $${params.length}`);
+  }
+  if (search) {
+    params.push(`%${search}%`);
+    const idx = params.length;
+    where.push(`(name ILIKE $${idx} OR phone ILIKE $${idx})`);
+  }
+  const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const totalRes = await query(`SELECT COUNT(*) FROM contacts ${whereClause}`, params);
+  const total = parseInt(totalRes.rows[0].count, 10);
+
+  params.push(limit);
+  const limitIdx = params.length;
+  params.push(offset);
+  const offsetIdx = params.length;
+
+  const rowsRes = await query(
+    `SELECT * FROM contacts ${whereClause} ORDER BY created_at DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+    params
+  );
+
+  return { contacts: rowsRes.rows as Contact[], total };
+}
+
+// Delete a single contact by phone. Returns true if a row was removed.
+export async function deleteContactByPhone(phone: string): Promise<boolean> {
+  await ensureContactsTable();
+  const r = await query("DELETE FROM contacts WHERE phone = $1", [phone]);
+  return (r.rowCount ?? 0) > 0;
+}
+
+// Update status of a contact by phone (used by send/reply pipelines).
+export async function setContactStatus(phone: string, status: string): Promise<void> {
+  await ensureContactsTable();
+  await query("UPDATE contacts SET status = $1 WHERE phone = $2", [status, phone]);
+}
+
+// Fetch all contacts (no pagination) — used for CSV export.
+export async function listAllContacts(): Promise<Contact[]> {
+  await ensureContactsTable();
+  const res = await query("SELECT * FROM contacts ORDER BY created_at DESC");
+  return res.rows as Contact[];
+}

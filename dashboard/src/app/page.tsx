@@ -7,6 +7,7 @@ import {
 import {
   MoonIcon, SunIcon, Bars3Icon, XMarkIcon, ArrowPathIcon,
   Squares2X2Icon, PhoneIcon, PaperAirplaneIcon, SignalSlashIcon,
+  TableCellsIcon,
 } from "@heroicons/react/24/outline";
 import {
   type NumberInfo, type Campaign, type ReplyItem, type StatusResponse,
@@ -15,8 +16,9 @@ import { Overview } from "@/components/overview";
 import { Numbers } from "@/components/numbers";
 import { Campaigns } from "@/components/campaigns";
 import { CampaignMonitor } from "@/components/campaign-monitor";
+import { Contacts } from "@/components/contacts";
 
-type Tab = "overview" | "numbers" | "campaigns";
+type Tab = "overview" | "numbers" | "campaigns" | "contacts";
 
 export default function Dashboard() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -190,6 +192,7 @@ export default function Dashboard() {
     { id: "overview", label: "Overview", icon: Squares2X2Icon },
     { id: "numbers", label: "Numbers", icon: PhoneIcon },
     { id: "campaigns", label: "Campaigns", icon: PaperAirplaneIcon },
+    { id: "contacts", label: "Contacts", icon: TableCellsIcon },
   ];
 
   const vpsOk = numbers.length > 0 && totalCapacity > 0;
@@ -358,6 +361,10 @@ export default function Dashboard() {
               onStartCampaign={startCampaign}
             />
           )
+        )}
+
+        {tab === "contacts" && (
+          <Contacts />
         )}
       </main>
     </div>
