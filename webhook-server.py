@@ -60,10 +60,11 @@ def process_reply(phone, text):
         print(f"🚫 Opt-out: {phone}")
         send_telegram_alert(f"🚫 *Opt-out*: {phone} replied STOP and was removed from all campaigns")
     else:
-        # Mark as replied
+        # Mark as replied — but ONLY in campaigns where this phone was sent (not all campaigns)
+        # The webhook doesn't know which campaign, so we mark the most recent 'sent' as replied
         cur.execute(
-            "UPDATE recipients SET status = 'replied', replied_at = NOW() WHERE phone = %s AND status = 'sent'",
-            [phone]
+            "UPDATE recipients SET status = 'replied', replied_at = NOW() WHERE phone = %s AND status = 'sent' AND sent_at = (SELECT MAX(sent_at) FROM recipients WHERE phone = %s AND status = 'sent')",
+            [phone, phone]
         )
         print(f"✅ Reply from {phone}: {text[:50]}")
     conn.commit()

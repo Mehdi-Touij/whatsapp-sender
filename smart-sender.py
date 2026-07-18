@@ -194,7 +194,7 @@ def advance_warmup(instance, current_day):
     conn.commit()
     conn.close()
 
-def get_pending_recipients(campaign_id, limit=100):
+def get_pending_recipients(campaign_id, limit=1000):
     conn = get_db()
     cur = conn.cursor()
     cur.execute("SELECT phone, name FROM recipients WHERE campaign_id = %s AND status = 'pending' LIMIT %s", (campaign_id, limit))
@@ -202,10 +202,10 @@ def get_pending_recipients(campaign_id, limit=100):
     conn.close()
     return [{"phone": r[0], "name": r[1]} for r in rows]
 
-def mark_sent(phone, number_used):
+def mark_sent(phone, number_used, campaign_id):
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("UPDATE recipients SET status = 'sent', number_used = %s, sent_at = NOW() WHERE phone = %s", (number_used, phone))
+    cur.execute("UPDATE recipients SET status = 'sent', number_used = %s, sent_at = NOW() WHERE phone = %s AND campaign_id = %s", (number_used, phone, campaign_id))
     conn.commit()
     conn.close()
 
@@ -307,7 +307,7 @@ def send_campaign(campaign_id, message_template):
             sent += 1
             update_number_stats(instance, True)
             number['msgs_today'] += 1
-            mark_sent(r['phone'], instance)
+            mark_sent(r['phone'], instance, campaign_id)
             log_send(campaign_id, r['phone'], instance, "sent")
         else:
             failed += 1
@@ -334,7 +334,9 @@ def send_campaign(campaign_id, message_template):
     update_campaign_stats(campaign_id)
     conn = get_db()
     cur = conn.cursor()
-    remaining = len(recipients) - sent - failed
+    # Count actual pending recipients in DB (not just the limited list)
+    cur.execute("SELECT COUNT(*) FROM recipients WHERE campaign_id = %s AND status = 'pending'", (campaign_id,))
+    remaining = cur.fetchone()[0]
     if remaining > 0:
         cur.execute("UPDATE campaigns SET status = 'partial' WHERE id = %s", (campaign_id,))
     else:

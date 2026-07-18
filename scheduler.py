@@ -41,10 +41,25 @@ def send_telegram(message):
         pass
 
 def reset_daily_counters():
-    """Reset msgs_sent_today for all numbers at midnight"""
+    """Reset msgs_sent_today for all numbers at midnight + advance warmup days"""
     conn = get_db()
     cur = conn.cursor()
     today = date.today()
+    
+    # Advance warmup: increment warmup_day for numbers in warmup
+    cur.execute("SELECT instance, warmup_day FROM numbers WHERE warmup_status = 'warmup' AND last_reset_date != %s", (today,))
+    warmup_numbers = cur.fetchall()
+    for instance, warmup_day in warmup_numbers:
+        new_day = warmup_day + 1
+        if new_day >= 4:
+            cur.execute("UPDATE numbers SET warmup_status = 'active', warmup_day = 4 WHERE instance = %s", (instance,))
+            print(f"✅ {instance} graduated from warmup -> active")
+            send_telegram(f"✅ Number {instance} graduated from warmup and is now fully active!")
+        else:
+            cur.execute("UPDATE numbers SET warmup_day = %s WHERE instance = %s", (new_day, instance))
+            print(f"📈 {instance} warmup day {warmup_day} -> {new_day}")
+    
+    # Reset daily counters
     cur.execute("UPDATE numbers SET msgs_sent_today = 0 WHERE last_reset_date != %s", (today,))
     cur.execute("UPDATE numbers SET last_reset_date = %s WHERE last_reset_date != %s", (today, today))
     conn.commit()
