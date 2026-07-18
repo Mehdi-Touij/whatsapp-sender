@@ -227,7 +227,7 @@ export default function Dashboard() {
       {/* Sidebar */}
       <aside
         className={[
-          "fixed md:sticky top-0 left-0 z-50 md:z-auto h-screen md:h-auto w-64 shrink-0",
+          "fixed top-0 left-0 z-50 md:z-30 h-screen w-64 shrink-0",
           "border-r border-tremor-border bg-tremor-background dark:border-dark-tremor-border dark:bg-dark-tremor-background",
           "flex flex-col p-3 gap-1 transition-transform duration-200 ease-out",
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
@@ -295,7 +295,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 p-4 md:p-6 md:max-w-6xl overflow-x-hidden min-w-0">
+      <main className="flex-1 md:ml-64 p-4 md:p-6 md:max-w-6xl overflow-x-hidden min-w-0">
         {toast && (
           <Card
             decoration="left"
