@@ -14,9 +14,7 @@
   --danger: #dc2626; --danger-light: #fee2e2;
   --warning: #d97706; --warning-light: #fef3c7;
   --info: #2563eb; --info-light: #dbeafe;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
   --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-lg: 0 10px 30px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
   --radius: 12px; --max-w: 820px;
 }
 @media (prefers-color-scheme: dark) {
@@ -25,9 +23,7 @@
     --text: #f1f5f9; --text-muted: #94a3b8; --text-light: #64748b;
     --border: #334155; --border-strong: #475569;
     --accent: #10b981; --accent-light: #064e3b; --accent-dark: #059669;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
     --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
-    --shadow-lg: 0 10px 30px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2);
   }
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -36,18 +32,22 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 body.rtl { font-family: 'Cairo', 'Inter', sans-serif; direction: rtl; }
 .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
 
-nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
-@media (prefers-color-scheme: dark) { nav { background: rgba(15,23,42,0.8); } }
+/* Language toggle — uses span-based approach */
+.ar { display: none; }
+body.rtl .en { display: none; }
+body.rtl .ar { display: inline; }
+
+nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+@media (prefers-color-scheme: dark) { nav { background: rgba(15,23,42,0.85); } }
 nav .container { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; padding-bottom: 14px; }
 .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; }
 .logo svg { width: 28px; height: 28px; color: var(--accent); }
 .nav-right { display: flex; align-items: center; gap: 20px; }
 .nav-links { display: flex; gap: 28px; font-size: 14px; }
-.nav-links a { color: var(--text-muted); text-decoration: none; font-weight: 500; transition: color 0.15s; }
+.nav-links a { color: var(--text-muted); text-decoration: none; font-weight: 500; }
 .nav-links a:hover { color: var(--accent); }
 @media (max-width: 600px) { .nav-links { display: none; } }
-
-.lang-toggle { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 100px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--surface); color: var(--text); transition: all 0.15s; }
+.lang-toggle { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 100px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--surface); color: var(--text); }
 .lang-toggle:hover { border-color: var(--accent); color: var(--accent); }
 .lang-toggle svg { width: 16px; height: 16px; }
 
@@ -55,46 +55,38 @@ nav .container { display: flex; align-items: center; justify-content: space-betw
 .badge-hero { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--accent-light); color: var(--accent-dark); border-radius: 100px; font-size: 13px; font-weight: 600; margin-bottom: 24px; }
 .badge-hero svg { width: 14px; height: 14px; }
 .hero h1 { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; max-width: 700px; margin: 0 auto 20px; }
-body.rtl .hero h1 { letter-spacing: 0; }
 .hero p { font-size: 18px; color: var(--text-muted); max-width: 580px; margin: 0 auto; }
 .hero-stats { display: flex; justify-content: center; gap: 48px; margin-top: 48px; flex-wrap: wrap; }
 .hero-stat { text-align: center; }
 .hero-stat .num { font-size: 32px; font-weight: 700; color: var(--accent); }
 .hero-stat .label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
-@media (max-width: 600px) { .hero h1 { font-size: 30px; } .hero p { font-size: 16px; } .hero-stats { gap: 24px; } }
+@media (max-width: 600px) { .hero h1 { font-size: 30px; } .hero-stats { gap: 24px; } }
 
 section { padding: 64px 0; border-top: 1px solid var(--border); }
 .section-label { font-size: 13px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-body.rtl .section-label { letter-spacing: 0; }
 .section-label svg { width: 16px; height: 16px; }
 .section-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px; }
-body.rtl .section-title { letter-spacing: 0; }
 .section-desc { font-size: 16px; color: var(--text-muted); margin-bottom: 32px; max-width: 600px; }
 @media (max-width: 600px) { .section-title { font-size: 22px; } }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); }
 .card h3 { font-size: 17px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-body.rtl .card h3 { flex-direction: row-reverse; text-align: right; }
 .card h3 svg { width: 20px; height: 20px; color: var(--accent); flex-shrink: 0; }
 .card p { font-size: 15px; color: var(--text-muted); }
-body.rtl .card p { text-align: right; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
 .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
 @media (max-width: 700px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
 
 .step { display: flex; gap: 20px; margin-bottom: 28px; align-items: flex-start; }
-body.rtl .step { flex-direction: row-reverse; text-align: right; }
 .step-num { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
 .step-body h4 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
 .step-body p { font-size: 15px; color: var(--text-muted); }
 
 table { width: 100%; border-collapse: collapse; margin: 8px 0; }
-body.rtl table { direction: rtl; }
 th { background: var(--bg-alt); text-align: left; padding: 12px 16px; font-size: 13px; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); }
-body.rtl th { text-align: right; }
 td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
-body.rtl td { text-align: right; }
+body.rtl th, body.rtl td { text-align: right; }
 
 .tag { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 12px; font-weight: 600; }
 .tag-green { background: var(--accent-light); color: var(--accent-dark); }
@@ -102,18 +94,15 @@ body.rtl td { text-align: right; }
 .tag-red { background: var(--danger-light); color: var(--danger); }
 .tag-blue { background: var(--info-light); color: var(--info); }
 
-.example { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: 'SF Mono', 'Monaco', monospace; font-size: 14px; margin: 12px 0; white-space: pre-wrap; }
-body.rtl .example { direction: ltr; text-align: left; }
+.example { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: 'SF Mono', 'Monaco', monospace; font-size: 14px; margin: 12px 0; white-space: pre-wrap; direction: ltr; text-align: left; }
 
 .faq-item { border-bottom: 1px solid var(--border); padding: 20px 0; cursor: pointer; }
 .faq-q { font-size: 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
-body.rtl .faq-q { flex-direction: row-reverse; text-align: right; }
 .faq-q svg { width: 20px; height: 20px; color: var(--text-muted); transition: transform 0.2s; flex-shrink: 0; }
 .faq-item.open .faq-q svg { transform: rotate(45deg); }
 .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
 .faq-item.open .faq-a { max-height: 400px; padding-top: 12px; }
 .faq-a p { font-size: 15px; color: var(--text-muted); }
-body.rtl .faq-a p { text-align: right; }
 
 .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.5s, transform 0.5s; }
 .fade-in.visible { opacity: 1; transform: translateY(0); }
@@ -129,135 +118,109 @@ footer p { font-size: 14px; color: var(--text-muted); }
 .icon-yellow { background: var(--warning-light); color: var(--warning); }
 
 .timeline-item { display: flex; gap: 20px; margin-bottom: 24px; align-items: flex-start; }
-body.rtl .timeline-item { flex-direction: row-reverse; text-align: right; }
 .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); margin-top: 6px; flex-shrink: 0; }
-.timeline-dot.inactive { background: var(--border-strong); }
 .timeline-content h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
 .timeline-content p { font-size: 14px; color: var(--text-muted); }
-
-[data-en] { display: inline; }
-[data-ar] { display: none; }
-body.rtl [data-en] { display: none; }
-body.rtl [data-ar] { display: inline; }
 </style>
 </head>
 <body>
 
-<!-- Nav -->
 <nav>
 <div class="container">
 <div class="logo">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-<span data-en>WhatsApp Sender</span><span data-ar>واتساب سندير</span>
+<span><span class="en">WhatsApp Sender</span><span class="ar">واتساب سندير</span></span>
 </div>
 <div class="nav-right">
 <div class="nav-links">
-<a href="#problem" data-en>The Problem</a><a href="#problem" data-ar>المشكلة</a>
-<a href="#how" data-en>How It Works</a><a href="#how" data-ar>كيف يعمل</a>
-<a href="#safety" data-en>Safety</a><a href="#safety" data-ar>الأمان</a>
-<a href="#faq" data-en>FAQ</a><a href="#faq" data-ar>الأسئلة</a>
+<a href="#problem"><span class="en">The Problem</span><span class="ar">المشكلة</span></a>
+<a href="#how"><span class="en">How It Works</span><span class="ar">كيف يعمل</span></a>
+<a href="#safety"><span class="en">Safety</span><span class="ar">الأمان</span></a>
+<a href="#faq"><span class="en">FAQ</span><span class="ar">الأسئلة</span></a>
 </div>
-<div class="lang-toggle" onclick="toggleLang()" id="langBtn">
+<div class="lang-toggle" onclick="toggleLang()">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-<span data-en>العربية</span><span data-ar>English</span>
+<span class="en">العربية</span><span class="ar">English</span>
 </div>
 </div>
 </div>
 </nav>
 
-<!-- Hero -->
 <div class="hero">
 <div class="container">
 <div class="badge-hero">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-<span data-en>Anti-ban protection built in</span><span data-ar>حماية من الحظر مدمجة</span>
+<span class="en">Anti-ban protection built in</span><span class="ar">حماية من الحظر مدمجة</span>
 </div>
-<h1><span data-en>Send WhatsApp messages to thousands of people — without getting banned</span><span data-ar>أرسل رسائل واتساب لآلاف الأشخاص — بدون حظر</span></h1>
-<p><span data-en>A smart system that spreads your messages across multiple WhatsApp numbers, respects safe limits, and tracks every reply.</span><span data-ar>نظام ذكي يوزع رسائلك على عدة أرقام واتساب، يحترم الحدود الآمنة، ويتتبع كل رد.</span></p>
+<h1><span class="en">Send WhatsApp messages to thousands of people — without getting banned</span><span class="ar">أرسل رسائل واتساب لآلاف الأشخاص — بدون حظر</span></h1>
+<p><span class="en">A smart system that spreads your messages across multiple WhatsApp numbers, respects safe limits, and tracks every reply.</span><span class="ar">نظام ذكي يوزع رسائلك على عدة أرقام واتساب، يحترم الحدود الآمنة، ويتتبع كل رد.</span></p>
 <div class="hero-stats">
-<div class="hero-stat"><div class="num">1,000+</div><div class="label" data-en>Messages per day</div><div class="label" data-ar>رسالة يوميا</div></div>
-<div class="hero-stat"><div class="num">7</div><div class="label" data-en>Numbers in rotation</div><div class="label" data-ar>أرقام في التدوير</div></div>
-<div class="hero-stat"><div class="num">34%</div><div class="label" data-en>Average reply rate</div><div class="label" data-ar>معدل الرد</div></div>
-<div class="hero-stat"><div class="num">$3</div><div class="label" data-en>Monthly cost</div><div class="label" data-ar>التكلفة الشهرية</div></div>
+<div class="hero-stat"><div class="num">1,000+</div><div class="label"><span class="en">Messages per day</span><span class="ar">رسالة يوميا</span></div></div>
+<div class="hero-stat"><div class="num">7</div><div class="label"><span class="en">Numbers in rotation</span><span class="ar">أرقام في التدوير</span></div></div>
+<div class="hero-stat"><div class="num">34%</div><div class="label"><span class="en">Average reply rate</span><span class="ar">معدل الرد</span></div></div>
+<div class="hero-stat"><div class="num">$3</div><div class="label"><span class="en">Monthly cost</span><span class="ar">التكلفة الشهرية</span></div></div>
 </div>
 </div>
 </div>
 
-<!-- Who is this for -->
 <section class="fade-in" id="audience">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span data-en>Who is this for?</span><span data-ar>لمن هذا النظام؟</span></div>
-<h2 class="section-title"><span data-en>Built for people who need to reach many contacts</span><span data-ar>مصمم للأشخاص الذين يحتاجون للوصول لعدة جهات اتصال</span></h2>
-<p class="section-desc"><span data-en>If you communicate with a large audience on WhatsApp, this system saves you from bans and manual work.</span><span data-ar>إذا كنت تتواصل مع جمهور كبير على واتساب، هذا النظام يحميك من الحظر ويوفر عليك العمل اليدوي.</span></p>
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span class="en">Who is this for?</span><span class="ar">لمن هذا النظام؟</span></div>
+<h2 class="section-title"><span class="en">Built for people who need to reach many contacts</span><span class="ar">مصمم للأشخاص الذين يحتاجون للوصول لعدة جهات اتصال</span></h2>
+<p class="section-desc"><span class="en">If you communicate with a large audience on WhatsApp, this system saves you from bans and manual work.</span><span class="ar">إذا كنت تتواصل مع جمهور كبير على واتساب، هذا النظام يحميك من الحظر ويوفر عليك العمل اليدوي.</span></p>
 <div class="grid-3">
 <div class="card">
 <div class="icon-circle icon-green" style="margin-bottom: 16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
-<h3 data-en>Course Instructors</h3>
-<h3 data-ar style="display:none;">مدربو الدورات</h3>
-<p data-en>Send daily lesson links to hundreds of students. Track who received, who replied, and who needs a follow-up reminder.</p>
-<p data-ar style="display:none;">أرسل روابط الدروس يوميا لمئات الطلاب. تتبع من استلم، من رد، ومن يحتاج تذكيرا.</p>
+<h3><span class="en">Course Instructors</span><span class="ar">مدربو الدورات</span></h3>
+<p><span class="en">Send daily lesson links to hundreds of students. Track who received, who replied, and who needs a follow-up reminder.</span><span class="ar">أرسل روابط الدروس يوميا لمئات الطلاب. تتبع من استلم، من رد، ومن يحتاج تذكيرا.</span></p>
 </div>
 <div class="card">
 <div class="icon-circle icon-blue" style="margin-bottom: 16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-<h3 data-en>Small Businesses</h3>
-<h3 data-ar style="display:none;">الشركات الصغيرة</h3>
-<p data-en>Notify customers about promotions, updates, or delivery confirmations without risking your main business number.</p>
-<p data-ar style="display:none;">أبلغ العملاء عن العروض والتحديثات أو تأكيدات التوصيل دون المخاطرة برقم عملك الرئيسي.</p>
+<h3><span class="en">Small Businesses</span><span class="ar">الشركات الصغيرة</span></h3>
+<p><span class="en">Notify customers about promotions, updates, or delivery confirmations without risking your main business number.</span><span class="ar">أبلغ العملاء عن العروض والتحديثات دون المخاطرة برقم عملك الرئيسي.</span></p>
 </div>
 <div class="card">
 <div class="icon-circle icon-yellow" style="margin-bottom: 16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-<h3 data-en>Community Managers</h3>
-<h3 data-ar style="display:none;">مديرو المجتمعات</h3>
-<p data-en>Send announcements to community members. People who reply "STOP" are automatically removed from all future campaigns.</p>
-<p data-ar style="display:none;">أرسل إعلانات لأعضاء المجتمع. من يرد بـ "STOP" يُزال تلقائيا من جميع الحملات المستقبلية.</p>
+<h3><span class="en">Community Managers</span><span class="ar">مديرو المجتمعات</span></h3>
+<p><span class="en">Send announcements to community members. People who reply STOP are automatically removed from all future campaigns.</span><span class="ar">أرسل إعلانات لأعضاء المجتمع. من يرد STOP يُزال تلقائيا من جميع الحملات.</span></p>
 </div>
 </div>
 </div>
 </section>
 
-<!-- The Problem -->
 <section class="fade-in" id="problem">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span data-en>The Problem</span><span data-ar>المشكلة</span></div>
-<h2 class="section-title"><span data-en>Why sending from one number gets you banned</span><span data-ar>لماذا الإرسال من رقم واحد يعرضك للحظر</span></h2>
-<p class="section-desc"><span data-en>WhatsApp has strict anti-spam systems. Sending too many messages from one number triggers automatic bans.</span><span data-ar>واتساب لديه أنظمة صارمة ضد الرسائل المزعجة. إرسال رسائل كثيرة من رقم واحد يسبب حظرا تلقائيا.</span></p>
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span class="en">The Problem</span><span class="ar">المشكلة</span></div>
+<h2 class="section-title"><span class="en">Why sending from one number gets you banned</span><span class="ar">لماذا الإرسال من رقم واحد يعرضك للحظر</span></h2>
+<p class="section-desc"><span class="en">WhatsApp has strict anti-spam systems. Sending too many messages from one number triggers automatic bans.</span><span class="ar">واتساب لديه أنظمة صارمة ضد الرسائل المزعجة. إرسال رسائل كثيرة من رقم واحد يسبب حظرا تلقائيا.</span></p>
 <div class="grid-3">
 <div class="card">
 <div class="icon-circle icon-red" style="margin-bottom: 16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-<h3 data-en>Too many messages</h3>
-<h3 data-ar style="display:none;">رسائل كثيرة جدا</h3>
-<p data-en>Sending 100+ messages per hour from one number looks like a bot. WhatsApp bans the number within hours. The safe limit is about 20 messages per hour.</p>
-<p data-ar style="display:none;">إرسال أكثر من 100 رسالة في الساعة من رقم واحد يبدو كروبوت. واتساب يحظر الرقم خلال ساعات. الحد الآمن هو حوالي 20 رسالة في الساعة.</p>
+<h3><span class="en">Too many messages</span><span class="ar">رسائل كثيرة جدا</span></h3>
+<p><span class="en">Sending 100+ messages per hour from one number looks like a bot. WhatsApp bans the number within hours. The safe limit is about 20 messages per hour.</span><span class="ar">إرسال أكثر من 100 رسالة في الساعة من رقم واحد يبدو كروبوت. واتساب يحظر الرقم خلال ساعات. الحد الآمن هو 20 رسالة في الساعة.</span></p>
 </div>
 <div class="card">
-<div class="icon-circle icon-red" style="margin-bottom: 16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="14" height="12" rx="2"/><line x1="15" y1="6" x2="17" y2="6"/></svg></div>
-<h3 data-en>Same message repeated</h3>
-<h3 data-ar style="display:none;">نفس الرسالة مكررة</h3>
-<p data-en>If 500 people receive the exact same text, WhatsApp detects it as spam. Real people send slightly different messages each time.</p>
-<p data-ar style="display:none;">إذا استلم 500 شخص نفس النص تماما، واتساب يكتشفه كرسالة مزعجة. الأشخاص الحقيقيون يرسلون رسائل مختلفة قليلا في كل مرة.</p>
+<div class="icon-circle icon-red" style="margin-bottom: 16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="14" height="12" rx="2"/></svg></div>
+<h3><span class="en">Same message repeated</span><span class="ar">نفس الرسالة مكررة</span></h3>
+<p><span class="en">If 500 people receive the exact same text, WhatsApp detects it as spam. Real people send slightly different messages each time.</span><span class="ar">إذا استلم 500 شخص نفس النص، واتساب يكتشفه كرسالة مزعجة. الأشخاص الحقيقيون يرسلون رسائل مختلفة.</span></p>
 </div>
 <div class="card">
 <div class="icon-circle icon-red" style="margin-bottom: 16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-<h3 data-en>No replies = spam</h3>
-<h3 data-ar style="display:none;">لا ردود = رسالة مزعجة</h3>
-<p data-en>If you send 500 messages and nobody replies, WhatsApp thinks you are spamming. A 30%+ reply rate keeps your numbers alive.</p>
-<p data-ar style="display:none;">إذا أرسلت 500 رسالة ولم يرد أحد، واتساب يعتبرك مرسلا للرسائل المزعجة. معدل رد 30%+ يحافظ على أرقامك.</p>
+<h3><span class="en">No replies = spam</span><span class="ar">لا ردود = رسالة مزعجة</span></h3>
+<p><span class="en">If you send 500 messages and nobody replies, WhatsApp thinks you are spamming. A 30%+ reply rate keeps your numbers alive.</span><span class="ar">إذا أرسلت 500 رسالة ولم يرد أحد، واتساب يعتبرك مرسلا للرسائل المزعجة. معدل رد 30%+ يحافظ على أرقامك.</span></p>
 </div>
 </div>
 </div>
 </section>
 
-<!-- The Solution -->
 <section class="fade-in" id="solution">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-en>The Solution</span><span data-ar>الحل</span></div>
-<h2 class="section-title"><span data-en>Spread messages across multiple numbers</span><span data-ar>وزع الرسائل على عدة أرقام</span></h2>
-<p class="section-desc"><span data-en>Instead of sending 500 messages from one number, the system sends about 70 from each of 7 numbers. Each number looks like a normal person chatting.</span><span data-ar>بدلا من إرسال 500 رسالة من رقم واحد، يرسل النظام حوالي 70 من كل رقم من 7 أرقام. كل رقم يبدو كشخص عادي يتحدث.</span></p>
-<div class="card" style="margin-top: 24px;">
-<div style="text-align: center; padding: 20px;">
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="en">The Solution</span><span class="ar">الحل</span></div>
+<h2 class="section-title"><span class="en">Spread messages across multiple numbers</span><span class="ar">وزع الرسائل على عدة أرقام</span></h2>
+<p class="section-desc"><span class="en">Instead of sending 500 messages from one number, the system sends about 70 from each of 7 numbers. Each number looks like a normal person chatting.</span><span class="ar">بدلا من إرسال 500 رسالة من رقم واحد، يرسل النظام حوالي 70 من كل رقم من 7 أرقام. كل رقم يبدو كشخص عادي يتحدث.</span></p>
+<div class="card" style="margin-top: 24px; text-align: center; padding: 32px;">
 <div style="font-size: 48px; font-weight: 800; color: var(--accent);">500</div>
-<div style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;" data-en>messages to send</div>
-<div style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px; display:none;" data-ar>رسالة للإرسال</div>
+<div style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;"><span class="en">messages to send</span><span class="ar">رسالة للإرسال</span></div>
 <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="width: 24px; height: 24px; margin: 0 auto 24px; display: block;"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
 <div class="grid-4" style="margin-bottom: 20px;">
 <div><div style="font-weight: 700; font-size: 20px;">SIM 1</div><div style="font-size: 13px; color: var(--text-muted);">71 msgs</div></div>
@@ -268,303 +231,179 @@ body.rtl [data-ar] { display: inline; }
 <div><div style="font-weight: 700; font-size: 20px;">SIM 6</div><div style="font-size: 13px; color: var(--text-muted);">71 msgs</div></div>
 <div><div style="font-weight: 700; font-size: 20px;">SIM 7</div><div style="font-size: 13px; color: var(--text-muted);">74 msgs</div></div>
 </div>
-<div style="display: inline-block; padding: 10px 24px; background: var(--accent-light); color: var(--accent-dark); border-radius: 100px; font-weight: 600; font-size: 14px;" data-en>Each number sends at most 20 messages per hour — well within safe limits</div>
-<div style="display: none; padding: 10px 24px; background: var(--accent-light); color: var(--accent-dark); border-radius: 100px; font-weight: 600; font-size: 14px;" data-ar>كل رقم يرسل 20 رسالة كحد أقصى في الساعة — ضمن الحدود الآمنة</div>
-</div>
+<div style="display: inline-block; padding: 10px 24px; background: var(--accent-light); color: var(--accent-dark); border-radius: 100px; font-weight: 600; font-size: 14px;"><span class="en">Each number sends at most 20 messages per hour — well within safe limits</span><span class="ar">كل رقم يرسل 20 رسالة كحد أقصى في الساعة — ضمن الحدود الآمنة</span></div>
 </div>
 </div>
 </section>
 
-<!-- How It Works -->
 <section class="fade-in" id="how">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span data-en>How It Works</span><span data-ar>كيف يعمل</span></div>
-<h2 class="section-title"><span data-en>Four simple steps</span><span data-ar>أربع خطوات بسيطة</span></h2>
-<div class="step">
-<div class="step-num">1</div>
-<div class="step-body">
-<h4 data-en>Upload your contact list</h4>
-<h4 data-ar style="display:none;">ارفع قائمة جهات الاتصال</h4>
-<p data-en>Upload a CSV file with phone numbers and names. Or use the webhook URL to automatically receive contacts from your website or landing page forms. Every contact is stored and can be reused across multiple campaigns.</p>
-<p data-ar style="display:none;">ارفع ملف CSV بأرقام الهواتف والأسماء. أو استخدم رابط webhook لاستقبال جهات الاتصال تلقائيا من موقعك. كل جهة اتصال تُخزن ويمكن إعادة استخدامها في حملات متعددة.</p>
-</div>
-</div>
-<div class="step">
-<div class="step-num">2</div>
-<div class="step-body">
-<h4 data-en>Write your message</h4>
-<h4 data-ar style="display:none;">اكتب رسالتك</h4>
-<p data-en>Write the exact message you want to send. The system sends it word-for-word — it never changes your text. You can use the name placeholder so each message is personalized. You are in full control of what people receive.</p>
-<p data-ar style="display:none;">اكتب الرسالة التي تريد إرسالها. النظام يرسلها كما هي كلمة بكلمة — لا يغير نصك أبدا. يمكنك استخدام اسم الشخص لكل رسالة. أنت تتحكم في ما يستلمه الناس.</p>
-</div>
-</div>
-<div class="step">
-<div class="step-num">3</div>
-<div class="step-body">
-<h4 data-en>Click Start</h4>
-<h4 data-ar style="display:none;">اضغط ابدأ</h4>
-<p data-en>The system sends your message to each person, one by one. It rotates between your WhatsApp numbers so no single number sends too many. Random delays between 30 and 90 seconds make it look like a real person typing.</p>
-<p data-ar style="display:none;">النظام يرسل رسالتك لكل شخص، واحدا تلو الآخر. يدور بين أرقام واتساب بحيث لا يرسل رقم واحد رسائل كثيرة. تأخير عشوائي بين 30 و90 ثانية يجعله يبدو كشخص حقيقي يكتب.</p>
-</div>
-</div>
-<div class="step">
-<div class="step-num">4</div>
-<div class="step-body">
-<h4 data-en>Track replies in real time</h4>
-<h4 data-ar style="display:none;">تتبع الردود في الوقت الحقيقي</h4>
-<p data-en>Watch the dashboard as messages are sent. See who received, who replied, and who opted out. When someone replies "1", they are marked as confirmed. When someone replies "STOP", they are permanently removed from all future campaigns.</p>
-<p data-ar style="display:none;">شاهد لوحة التحكم أثناء إرسال الرسائل. انظر من استلم، من رد، ومن ألغى الاشتراك. عندما يرد شخص بـ "1"، يُعلم كمؤكد. عندما يرد "STOP"، يُزال نهائيا من جميع الحملات المستقبلية.</p>
-</div>
-</div>
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="en">How It Works</span><span class="ar">كيف يعمل</span></div>
+<h2 class="section-title"><span class="en">Four simple steps</span><span class="ar">أربع خطوات بسيطة</span></h2>
+<div class="step"><div class="step-num">1</div><div class="step-body"><h4><span class="en">Upload your contact list</span><span class="ar">ارفع قائمة جهات الاتصال</span></h4><p><span class="en">Upload a CSV file with phone numbers and names. Or use the webhook URL to automatically receive contacts from your website. Every contact is stored and can be reused across multiple campaigns.</span><span class="ar">ارفع ملف CSV بأرقام الهواتف والأسماء. أو استخدم رابط webhook لاستقبال جهات الاتصال تلقائيا من موقعك. كل جهة اتصال تُخزن ويمكن إعادة استخدامها.</span></p></div></div>
+<div class="step"><div class="step-num">2</div><div class="step-body"><h4><span class="en">Write your message</span><span class="ar">اكتب رسالتك</span></h4><p><span class="en">Write the exact message you want to send. The system sends it word-for-word — it never changes your text. You are in full control of what people receive.</span><span class="ar">اكتب الرسالة التي تريد إرسالها. النظام يرسلها كما هي كلمة بكلمة — لا يغير نصك أبدا. أنت تتحكم في ما يستلمه الناس.</span></p></div></div>
+<div class="step"><div class="step-num">3</div><div class="step-body"><h4><span class="en">Click Start</span><span class="ar">اضغط ابدأ</span></h4><p><span class="en">The system sends your message to each person, one by one. It rotates between your WhatsApp numbers. Random delays between 30 and 90 seconds make it look like a real person typing.</span><span class="ar">النظام يرسل رسالتك لكل شخص. يدور بين أرقام واتساب. تأخير عشوائي بين 30 و90 ثانية يجعله يبدو كشخص حقيقي يكتب.</span></p></div></div>
+<div class="step"><div class="step-num">4</div><div class="step-body"><h4><span class="en">Track replies in real time</span><span class="ar">تتبع الردود في الوقت الحقيقي</span></h4><p><span class="en">Watch the dashboard as messages are sent. See who received, who replied, and who opted out. When someone replies STOP, they are permanently removed from all future campaigns.</span><span class="ar">شاهد لوحة التحكم أثناء إرسال الرسائل. انظر من استلم، من رد، ومن ألغى. عندما يرد شخص STOP، يُزال نهائيا من جميع الحملات.</span></p></div></div>
 </div>
 </section>
 
-<!-- Safety Rules -->
 <section class="fade-in" id="safety">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-en>Safety Rules</span><span data-ar>قواعد الأمان</span></div>
-<h2 class="section-title"><span data-en>Six rules the system enforces automatically</span><span data-ar>ست قواعد يطبقها النظام تلقائيا</span></h2>
-<p class="section-desc"><span data-en>You do not need to think about these. The system handles them for you.</span><span data-ar>لا تحتاج للتفكير فيها. النظام يتكفل بكل شيء.</span></p>
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="en">Safety Rules</span><span class="ar">قواعد الأمان</span></div>
+<h2 class="section-title"><span class="en">Six rules the system enforces automatically</span><span class="ar">ست قواعد يطبقها النظام تلقائيا</span></h2>
+<p class="section-desc"><span class="en">You do not need to think about these. The system handles them for you.</span><span class="ar">لا تحتاج للتفكير فيها. النظام يتكفل بكل شيء.</span></p>
 <div class="card">
 <table>
-<tr><th data-en>Rule</th><th data-en>What it does</th><th data-en>Why it matters</th><th></th></tr>
-<tr><th data-ar style="display:none;">القاعدة</th><th data-ar style="display:none;">ماذا تفعل</th><th data-ar style="display:none;">لماذا</th><th></th></tr>
-<tr><td><strong data-en>Hourly limit</strong><strong data-ar style="display:none;">حد الساعة</strong></td><td data-en>Max 20 messages per hour per number</td><td data-en>WhatsApp bans numbers sending more than 30 per hour</td><td><span class="tag tag-blue" data-en>Auto</span><span class="tag tag-blue" data-ar style="display:none;">تلقائي</span></td></tr>
-<tr><td><strong data-en>Daily limit</strong><strong data-ar style="display:none;">حد اليوم</strong></td><td data-en>Max 160 messages per day per number</td><td data-en>Keeps each number under the 200/day danger zone</td><td><span class="tag tag-green" data-en>Auto</span><span class="tag tag-green" data-ar style="display:none;">تلقائي</span></td></tr>
-<tr><td><strong data-en>Random delay</strong><strong data-ar style="display:none;">تأخير عشوائي</strong></td><td data-en>Waits 30 to 90 seconds between each message</td><td data-en>Fixed timing looks like a bot. Random looks human.</td><td><span class="tag tag-blue" data-en>Auto</span><span class="tag tag-blue" data-ar style="display:none;">تلقائي</span></td></tr>
-<tr><td><strong data-en>Reply prompt</strong><strong data-ar style="display:none;">طلب الرد</strong></td><td data-en>Appends "Reply 1 to confirm" to every message</td><td data-en>Zero replies means spam. 30%+ reply rate keeps numbers alive.</td><td><span class="tag tag-green" data-en>Auto</span><span class="tag tag-green" data-ar style="display:none;">تلقائي</span></td></tr>
-<tr><td><strong data-en>Ban detection</strong><strong data-ar style="display:none;">كشف الحظر</strong></td><td data-en>If a number gets banned, it is removed instantly</td><td data-en>Prevents the system from retrying a dead number</td><td><span class="tag tag-red" data-en>Auto</span><span class="tag tag-red" data-ar style="display:none;">تلقائي</span></td></tr>
-<tr><td><strong data-en>Warmup period</strong><strong data-ar style="display:none;">فترة التسخين</strong></td><td data-en>New numbers start at 20/day, increase over 3 days</td><td data-en>A new number sending 160/day immediately looks suspicious</td><td><span class="tag tag-yellow" data-en>Auto</span><span class="tag tag-yellow" data-ar style="display:none;">تلقائي</span></td></tr>
+<tr><th><span class="en">Rule</span><span class="ar">القاعدة</span></th><th><span class="en">What it does</span><span class="ar">ماذا تفعل</span></th><th><span class="en">Why it matters</span><span class="ar">لماذا</span></th><th></th></tr>
+<tr><td><strong><span class="en">Hourly limit</span><span class="ar">حد الساعة</span></strong></td><td><span class="en">Max 20 messages per hour per number</span><span class="ar">20 رسالة كحد أقصى في الساعة لكل رقم</span></td><td><span class="en">WhatsApp bans numbers sending more than 30 per hour</span><span class="ar">واتساب يحظر الأرقام التي ترسل أكثر من 30 في الساعة</span></td><td><span class="tag tag-blue"><span class="en">Auto</span><span class="ar">تلقائي</span></span></td></tr>
+<tr><td><strong><span class="en">Daily limit</span><span class="ar">حد اليوم</span></strong></td><td><span class="en">Max 160 messages per day per number</span><span class="ar">160 رسالة كحد أقصى في اليوم لكل رقم</span></td><td><span class="en">Keeps each number under the 200/day danger zone</span><span class="ar">يبقي كل رقم تحت منطقة الخطر 200/يوم</span></td><td><span class="tag tag-green"><span class="en">Auto</span><span class="ar">تلقائي</span></span></td></tr>
+<tr><td><strong><span class="en">Random delay</span><span class="ar">تأخير عشوائي</span></strong></td><td><span class="en">Waits 30 to 90 seconds between each message</span><span class="ar">ينتظر 30 إلى 90 ثانية بين كل رسالة</span></td><td><span class="en">Fixed timing looks like a bot. Random looks human.</span><span class="ar">التوقيت الثابت يبدو كروبوت. العشوائي يبدو بشريا.</span></td><td><span class="tag tag-blue"><span class="en">Auto</span><span class="ar">تلقائي</span></span></td></tr>
+<tr><td><strong><span class="en">Reply prompt</span><span class="ar">طلب الرد</span></strong></td><td><span class="en">Appends "Reply 1 to confirm" to every message</span><span class="ar">يضيف "رد 1 للتأكيد" لكل رسالة</span></td><td><span class="en">Zero replies means spam. 30%+ reply rate keeps numbers alive.</span><span class="ar">صفر ردود يعني رسالة مزعجة. 30%+ معدل رد يحافظ على الأرقام.</span></td><td><span class="tag tag-green"><span class="en">Auto</span><span class="ar">تلقائي</span></span></td></tr>
+<tr><td><strong><span class="en">Ban detection</span><span class="ar">كشف الحظر</span></strong></td><td><span class="en">If a number gets banned, it is removed instantly</span><span class="ar">إذا حُظر رقم، يُزال فورا</span></td><td><span class="en">Prevents the system from retrying a dead number</span><span class="ar">يمنع النظام من إعادة المحاولة مع رقم ميت</span></td><td><span class="tag tag-red"><span class="en">Auto</span><span class="ar">تلقائي</span></span></td></tr>
+<tr><td><strong><span class="en">Warmup period</span><span class="ar">فترة التسخين</span></strong></td><td><span class="en">New numbers start at 20/day, increase over 3 days</span><span class="ar">الأرقام الجديدة تبدأ بـ20/يوم، تزيد خلال 3 أيام</span></td><td><span class="en">A new number sending 160/day immediately looks suspicious</span><span class="ar">رقم جديد يرسل 160/يوم فورا يبدو مشبوها</span></td><td><span class="tag tag-yellow"><span class="en">Auto</span><span class="ar">تلقائي</span></span></td></tr>
 </table>
 </div>
 </div>
 </section>
 
-<!-- Number Rotation -->
 <section class="fade-in" id="rotation">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span data-en>Number Rotation</span><span data-ar>تدوير الأرقام</span></div>
-<h2 class="section-title"><span data-en>How the system chooses which number sends next</span><span data-ar>كيف يختار النظام الرقم التالي</span></h2>
-<p class="section-desc"><span data-en>The system always picks the number that has sent the fewest messages today. This keeps all numbers balanced and safe.</span><span data-ar>النظام يختار دائما الرقم الذي أرسل أقل عدد من الرسائل اليوم. هذا يحافظ على توازن وأمان جميع الأرقام.</span></p>
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span class="en">Number Rotation</span><span class="ar">تدوير الأرقام</span></div>
+<h2 class="section-title"><span class="en">How the system chooses which number sends next</span><span class="ar">كيف يختار النظام الرقم التالي</span></h2>
+<p class="section-desc"><span class="en">The system always picks the number that has sent the fewest messages today. This keeps all numbers balanced and safe.</span><span class="ar">النظام يختار دائما الرقم الذي أرسل أقل عدد من الرسائل اليوم. هذا يحافظ على توازن وأمان جميع الأرقام.</span></p>
 <div class="card" style="margin-top: 24px;">
 <table>
-<tr><th data-en>Message</th><th data-en>Number used</th><th data-en>Why</th><th>SIM 1</th><th>SIM 2</th><th>SIM 3</th></tr>
-<tr><th data-ar style="display:none;">الرسالة</th><th data-ar style="display:none;">الرقم</th><th data-ar style="display:none;">السبب</th><th></th><th></th><th></th></tr>
-<tr><td>1</td><td>SIM 1</td><td data-en>Fewest today (0)</td><td data-ar style="display:none;">الأقل اليوم</td><td>1</td><td>0</td><td>0</td></tr>
-<tr><td>2</td><td>SIM 2</td><td data-en>Fewest today (0)</td><td data-ar style="display:none;">الأقل اليوم</td><td>1</td><td>1</td><td>0</td></tr>
-<tr><td>3</td><td>SIM 3</td><td data-en>Fewest today (0)</td><td data-ar style="display:none;">الأقل اليوم</td><td>1</td><td>1</td><td>1</td></tr>
-<tr><td>4</td><td>SIM 1</td><td data-en>Fewest today (1)</td><td data-ar style="display:none;">الأقل اليوم</td><td>2</td><td>1</td><td>1</td></tr>
-<tr><td>5</td><td>SIM 2</td><td data-en>Fewest today (1)</td><td data-ar style="display:none;">الأقل اليوم</td><td>2</td><td>2</td><td>1</td></tr>
-<tr><td>6</td><td>SIM 3</td><td data-en>Fewest today (1)</td><td data-ar style="display:none;">الأقل اليوم</td><td>2</td><td>2</td><td>2</td></tr>
+<tr><th><span class="en">Message</span><span class="ar">الرسالة</span></th><th><span class="en">Number</span><span class="ar">الرقم</span></th><th><span class="en">Why</span><span class="ar">السبب</span></th><th>SIM 1</th><th>SIM 2</th><th>SIM 3</th></tr>
+<tr><td>1</td><td>SIM 1</td><td><span class="en">Fewest (0)</span><span class="ar">الأقل (0)</span></td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>2</td><td>SIM 2</td><td><span class="en">Fewest (0)</span><span class="ar">الأقل (0)</span></td><td>1</td><td>1</td><td>0</td></tr>
+<tr><td>3</td><td>SIM 3</td><td><span class="en">Fewest (0)</span><span class="ar">الأقل (0)</span></td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>4</td><td>SIM 1</td><td><span class="en">Fewest (1)</span><span class="ar">الأقل (1)</span></td><td>2</td><td>1</td><td>1</td></tr>
+<tr><td>5</td><td>SIM 2</td><td><span class="en">Fewest (1)</span><span class="ar">الأقل (1)</span></td><td>2</td><td>2</td><td>1</td></tr>
+<tr><td>6</td><td>SIM 3</td><td><span class="en">Fewest (1)</span><span class="ar">الأقل (1)</span></td><td>2</td><td>2</td><td>2</td></tr>
 </table>
-<p style="font-size: 13px; color: var(--text-muted); margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);" data-en>If a number reaches its hourly limit (20), it is skipped. If all numbers are at the limit, the system waits until the limit resets, then continues.</p>
-<p style="font-size: 13px; color: var(--text-muted); margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display:none;" data-ar>إذا وصل رقم للحد الساعي (20)، يتم تخطيه. إذا وصلت جميع الأرقام للحد، ينتظر النظام حتى يُعاد ضبطه ثم يكمل.</p>
+<p style="font-size: 13px; color: var(--text-muted); margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);"><span class="en">If a number reaches its hourly limit (20), it is skipped. If all numbers are at the limit, the system waits until the limit resets, then continues.</span><span class="ar">إذا وصل رقم للحد الساعي (20)، يتم تخطيه. إذا وصلت جميع الأرقام للحد، ينتظر النظام حتى يُعاد ضبطه ثم يكمل.</span></p>
 </div>
 </div>
 </section>
 
-<!-- Warmup -->
 <section class="fade-in" id="warmup">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span data-en>Warmup Period</span><span data-ar>فترة التسخين</span></div>
-<h2 class="section-title"><span data-en>New numbers start slow and build up over 3 days</span><span data-ar>الأرقام الجديدة تبدأ ببطء وتزيد خلال 3 أيام</span></h2>
-<p class="section-desc"><span data-en>When you add a new WhatsApp number, it cannot send 160 messages on day one. It gradually increases.</span><span data-ar>عند إضافة رقم واتساب جديد، لا يمكنه إرسال 160 رسالة في اليوم الأول. يزيد تدريجيا.</span></p>
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span class="en">Warmup Period</span><span class="ar">فترة التسخين</span></div>
+<h2 class="section-title"><span class="en">New numbers start slow and build up over 3 days</span><span class="ar">الأرقام الجديدة تبدأ ببطء وتزيد خلال 3 أيام</span></h2>
+<p class="section-desc"><span class="en">When you add a new WhatsApp number, it cannot send 160 messages on day one. It gradually increases.</span><span class="ar">عند إضافة رقم واتساب جديد، لا يمكنه إرسال 160 رسالة في اليوم الأول. يزيد تدريجيا.</span></p>
 <div style="margin-top: 24px;">
-<div class="timeline-item">
-<div class="timeline-dot"></div>
-<div class="timeline-content">
-<h4 data-en>Day 1 — 20 messages maximum</h4>
-<h4 data-ar style="display:none;">اليوم 1 — 20 رسالة كحد أقصى</h4>
-<p data-en>The number is brand new. It can only send 20 messages today. This looks like a normal person who just started using WhatsApp.</p>
-<p data-ar style="display:none;">الرقم جديد تماما. يمكنه إرسال 20 رسالة فقط اليوم. هذا يبدو كشخص عادي بدأ استخدام واتساب للتو.</p>
-</div>
-</div>
-<div class="timeline-item">
-<div class="timeline-dot"></div>
-<div class="timeline-content">
-<h4 data-en>Day 2 — 60 messages maximum</h4>
-<h4 data-ar style="display:none;">اليوم 2 — 60 رسالة كحد أقصى</h4>
-<p data-en>The number has been active for 24 hours. The limit increases to 60. It is still being cautious but can do more work.</p>
-<p data-ar style="display:none;">الرقم نشط منذ 24 ساعة. يزيد الحد إلى 60. لا يزال حذرا لكن يمكنه القيام بعمل أكثر.</p>
-</div>
-</div>
-<div class="timeline-item">
-<div class="timeline-dot"></div>
-<div class="timeline-content">
-<h4 data-en>Day 3 — 100 messages maximum</h4>
-<h4 data-ar style="display:none;">اليوم 3 — 100 رسالة كحد أقصى</h4>
-<p data-en>The number is now established. It can send 100 messages. Almost at full capacity.</p>
-<p data-ar style="display:none;">الرقم أصبح راسخا. يمكنه إرسال 100 رسالة. تقريبا بكامل طاقته.</p>
-</div>
-</div>
-<div class="timeline-item">
-<div class="timeline-dot"></div>
-<div class="timeline-content">
-<h4 data-en>Day 4 and beyond — 160 messages (full capacity)</h4>
-<h4 data-ar style="display:none;">اليوم 4 فما فوق — 160 رسالة (كامل الطاقة)</h4>
-<p data-en>The number has graduated from warmup. It is now fully active and can send up to 160 messages per day. This happens automatically.</p>
-<p data-ar style="display:none;">الرقم تخرج من فترة التسخين. أصبح نشطا بالكامل ويمكنه إرسال 160 رسالة يوميا. هذا يحدث تلقائيا.</p>
-</div>
-</div>
+<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><h4><span class="en">Day 1 — 20 messages maximum</span><span class="ar">اليوم 1 — 20 رسالة كحد أقصى</span></h4><p><span class="en">The number is brand new. It can only send 20 messages today. This looks like a normal person who just started using WhatsApp.</span><span class="ar">الرقم جديد تماما. يمكنه إرسال 20 رسالة فقط اليوم. هذا يبدو كشخص عادي بدأ استخدام واتساب.</span></p></div></div>
+<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><h4><span class="en">Day 2 — 60 messages maximum</span><span class="ar">اليوم 2 — 60 رسالة كحد أقصى</span></h4><p><span class="en">The number has been active for 24 hours. The limit increases to 60. Still being cautious but can do more work.</span><span class="ar">الرقم نشط منذ 24 ساعة. يزيد الحد إلى 60. لا يزال حذرا لكن يمكنه القيام بعمل أكثر.</span></p></div></div>
+<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><h4><span class="en">Day 3 — 100 messages maximum</span><span class="ar">اليوم 3 — 100 رسالة كحد أقصى</span></h4><p><span class="en">The number is now established. It can send 100 messages. Almost at full capacity.</span><span class="ar">الرقم أصبح راسخا. يمكنه إرسال 100 رسالة. تقريبا بكامل طاقته.</span></p></div></div>
+<div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><h4><span class="en">Day 4 and beyond — 160 messages (full capacity)</span><span class="ar">اليوم 4 فما فوق — 160 رسالة (كامل الطاقة)</span></h4><p><span class="en">The number has graduated from warmup. It is now fully active and can send up to 160 messages per day. This happens automatically.</span><span class="ar">الرقم تخرج من فترة التسخين. أصبح نشطا بالكامل ويمكنه إرسال 160 رسالة يوميا. هذا يحدث تلقائيا.</span></p></div></div>
 </div>
 </div>
 </section>
 
-<!-- Message Control -->
 <section class="fade-in" id="messages">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span data-en>Message Control</span><span data-ar>تحكم الرسالة</span></div>
-<h2 class="section-title"><span data-en>You control exactly what people receive</span><span data-ar>أنت تتحكم في ما يستلمه الناس بالضبط</span></h2>
-<p class="section-desc"><span data-en>The system sends your message word-for-word. It does not change, rewrite, or paraphrase anything.</span><span data-ar>النظام يرسل رسالتك كلمة بكلمة. لا يغير أو يعيد صياغة أي شيء.</span></p>
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="en">Message Control</span><span class="ar">تحكم الرسالة</span></div>
+<h2 class="section-title"><span class="en">You control exactly what people receive</span><span class="ar">أنت تتحكم في ما يستلمه الناس بالضبط</span></h2>
+<p class="section-desc"><span class="en">The system sends your message word-for-word. It does not change, rewrite, or paraphrase anything.</span><span class="ar">النظام يرسل رسالتك كلمة بكلمة. لا يغير أو يعيد صياغة أي شيء.</span></p>
 <div class="grid-2" style="margin-top: 24px;">
 <div class="card">
-<h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span data-en>What you write</span><span data-ar>ما تكتبه</span></h3>
+<h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span class="en">What you write</span><span class="ar">ما تكتبه</span></h3>
 <div class="example">Hi {name}, your Lesson 1 is ready! Reply 1 to confirm.</div>
-<p data-en>The only thing the system replaces is {name} — it puts each person's actual name. Everything else stays exactly as you wrote it.</p>
-<p data-ar style="display:none;">الشيء الوحيد الذي يستبدله النظام هو {name} — يضع اسم كل شخص. كل شيء آخر يبقى كما كتبته تماما.</p>
+<p><span class="en">The only thing the system replaces is {name} — it puts each person's actual name. Everything else stays exactly as you wrote it.</span><span class="ar">الشيء الوحيد الذي يستبدله النظام هو {name} — يضع اسم كل شخص. كل شيء آخر يبقى كما كتبته تماما.</span></p>
 </div>
 <div class="card">
-<h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span data-en>What they receive</span><span data-ar>ما يستلمونه</span></h3>
+<h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span class="en">What they receive</span><span class="ar">ما يستلمونه</span></h3>
 <div class="example">Hi Youssef, your Lesson 1 is ready! Reply 1 to confirm.</div>
 <div class="example" style="margin-top: 8px;">Hi Fatima, your Lesson 1 is ready! Reply 1 to confirm.</div>
-<p data-en>Same message, different name. Nothing else changes.</p>
-<p data-ar style="display:none;">نفس الرسالة، اسم مختلف. لا شيء آخر يتغير.</p>
+<p><span class="en">Same message, different name. Nothing else changes.</span><span class="ar">نفس الرسالة، اسم مختلف. لا شيء آخر يتغير.</span></p>
 </div>
 </div>
 </div>
 </section>
 
-<!-- Dashboard -->
 <section class="fade-in" id="dashboard">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span data-en>Dashboard</span><span data-ar>لوحة التحكم</span></div>
-<h2 class="section-title"><span data-en>Four pages, one control panel</span><span data-ar>أربع صفحات، لوحة تحكم واحدة</span></h2>
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span class="en">Dashboard</span><span class="ar">لوحة التحكم</span></div>
+<h2 class="section-title"><span class="en">Four pages, one control panel</span><span class="ar">أربع صفحات، لوحة تحكم واحدة</span></h2>
 <div class="grid-2">
-<div class="card">
-<h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span data-en>Overview</span><span data-ar>نظرة عامة</span></h3>
-<p data-en>See today's stats: messages sent, replies received, reply rate, and remaining capacity. Alerts show if any number is banned or at risk.</p>
-<p data-ar style="display:none;">شاهد إحصائيات اليوم: الرسائل المرسلة، الردود المستلمة، معدل الرد، والطاقة المتبقية. التنبيهات تظهر إذا حُظر رقم أو أصبح في خطر.</p>
-</div>
-<div class="card">
-<h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span data-en>Numbers</span><span data-ar>الأرقام</span></h3>
-<p data-en>See all your WhatsApp numbers with status, daily progress, reply rate, and health. Add new numbers by scanning a QR code. Delete banned numbers with one click.</p>
-<p data-ar style="display:none;">شاهد جميع أرقام واتساب بالحالة، التقدم اليومي، معدل الرد، والصحة. أضف أرقاما بمسح رمز QR. احذف الأرقام المحظورة بنقرة.</p>
-</div>
-<div class="card">
-<h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span data-en>Campaigns</span><span data-ar>الحملات</span></h3>
-<p data-en>Create a campaign in 4 steps: name it, upload contacts, write your message, review and start. Watch live progress. Stop anytime.</p>
-<p data-ar style="display:none;">أنشئ حملة في 4 خطوات: سمّها، ارفع جهات الاتصال، اكتب رسالتك، راجع وابدأ. شاهد التقدم المباشر. أوقف في أي وقت.</p>
-</div>
-<div class="card">
-<h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg><span data-en>Contacts</span><span data-ar>جهات الاتصال</span></h3>
-<p data-en>All your contacts in one table. Search, filter by status, export to CSV. Use the webhook URL to receive contacts from your website automatically.</p>
-<p data-ar style="display:none;">جميع جهات الاتصال في جدول واحد. ابحث، صفِّ حسب الحالة، صدّر CSV. استخدم رابط webhook لاستقبال جهات الاتصال من موقعك تلقائيا.</p>
-</div>
+<div class="card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="en">Overview</span><span class="ar">نظرة عامة</span></h3><p><span class="en">See today's stats: messages sent, replies received, reply rate, and remaining capacity. Alerts show if any number is banned or at risk.</span><span class="ar">شاهد إحصائيات اليوم: الرسائل المرسلة، الردود، معدل الرد، والطاقة المتبقية. التنبيهات تظهر إذا حُظر رقم.</span></p></div>
+<div class="card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span class="en">Numbers</span><span class="ar">الأرقام</span></h3><p><span class="en">See all your WhatsApp numbers with status, daily progress, reply rate, and health. Add new numbers by scanning a QR code. Delete banned numbers with one click.</span><span class="ar">شاهد جميع أرقام واتساب بالحالة والتقدم ومعدل الرد والصحة. أضف أرقاما بمسح QR. احذف المحظورة بنقرة.</span></p></div>
+<div class="card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span class="en">Campaigns</span><span class="ar">الحملات</span></h3><p><span class="en">Create a campaign in 4 steps: name it, upload contacts, write your message, review and start. Watch live progress. Stop anytime.</span><span class="ar">أنشئ حملة في 4 خطوات: سمّها، ارفع جهات الاتصال، اكتب رسالتك، راجع وابدأ. شاهد التقدم. أوقف في أي وقت.</span></p></div>
+<div class="card"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg><span class="en">Contacts</span><span class="ar">جهات الاتصال</span></h3><p><span class="en">All your contacts in one table. Search, filter by status, export to CSV. Use the webhook URL to receive contacts from your website automatically.</span><span class="ar">جميع جهات الاتصال في جدول. ابحث، صفِّ، صدّر CSV. استخدم webhook لاستقبال جهات الاتصال من موقعك تلقائيا.</span></p></div>
 </div>
 </div>
 </section>
 
-<!-- Cost -->
 <section class="fade-in" id="cost">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span data-en>Real Numbers</span><span data-ar>الأرقام الحقيقية</span></div>
-<h2 class="section-title"><span data-en>What it costs to run</span><span data-ar>تكلفة التشغيل</span></h2>
-<p class="section-desc"><span data-en>The system is designed to be affordable. Here is the breakdown for sending 1,000 messages per day.</span><span data-ar>النظام مصمم ليكون ميسور التكلفة. إليك التفصيل لإرسال 1000 رسالة يوميا.</span></p>
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span class="en">Real Numbers</span><span class="ar">الأرقام الحقيقية</span></div>
+<h2 class="section-title"><span class="en">What it costs to run</span><span class="ar">تكلفة التشغيل</span></h2>
+<p class="section-desc"><span class="en">The system is designed to be affordable. Here is the breakdown for sending 1,000 messages per day.</span><span class="ar">النظام مصمم ليكون ميسور التكلفة. إليك التفصيل لإرسال 1000 رسالة يوميا.</span></p>
 <div class="card" style="margin-top: 24px;">
 <table>
-<tr><th data-en>Item</th><th data-en>Cost</th><th data-en>Type</th><th data-en>Notes</th></tr>
-<tr><th data-ar style="display:none;">البند</th><th data-ar style="display:none;">التكلفة</th><th data-ar style="display:none;">النوع</th><th data-ar style="display:none;">ملاحظات</th></tr>
-<tr><td data-en>7 SIM cards (Moroccan carriers)</td><td data-ar style="display:none;">7 شرائح (شركات مغربية)</td><td>~$28</td><td data-en>One-time</td><td data-ar style="display:none;">مرة واحدة</td><td data-en>IAM, Inwi, or Orange. Use real SIMs.</td><td data-ar style="display:none;">اتصالات المغرب، إنوي، أورنج. استخدم شرائح حقيقية.</td></tr>
-<tr><td data-en>WhatsApp numbers</td><td data-ar style="display:none;">أرقام واتساب</td><td>$0</td><td data-en>Free</td><td data-ar style="display:none;">مجاني</td><td data-en>Each SIM gets a free WhatsApp account.</td><td data-ar style="display:none;">كل شريحة تحصل على حساب واتساب مجاني.</td></tr>
-<tr><td data-en>Server + Dashboard + Database</td><td data-ar style="display:none;">الخادم + اللوحة + قاعدة البيانات</td><td>$0</td><td data-en>Free</td><td data-ar style="display:none;">مجاني</td><td data-en>Runs on existing VPS + Railway free tier.</td><td data-ar style="display:none;">يعمل على الخادم الحالي + Railway مجاني.</td></tr>
-<tr><td><strong data-en>Total one-time</strong><strong data-ar style="display:none;">المجموع لمرة واحدة</strong></td><td><strong>$28</strong></td><td></td><td></td></tr>
-<tr><td><strong data-en>Total monthly</strong><strong data-ar style="display:none;">المجموع الشهري</strong></td><td><strong>$0</strong></td><td></td><td></td></tr>
+<tr><th><span class="en">Item</span><span class="ar">البند</span></th><th><span class="en">Cost</span><span class="ar">التكلفة</span></th><th><span class="en">Type</span><span class="ar">النوع</span></th><th><span class="en">Notes</span><span class="ar">ملاحظات</span></th></tr>
+<tr><td><span class="en">7 SIM cards (Moroccan carriers)</span><span class="ar">7 شرائح (شركات مغربية)</span></td><td>~$28</td><td><span class="en">One-time</span><span class="ar">مرة واحدة</span></td><td><span class="en">IAM, Inwi, or Orange</span><span class="ar">اتصالات، إنوي، أورنج</span></td></tr>
+<tr><td><span class="en">WhatsApp numbers</span><span class="ar">أرقام واتساب</span></td><td>$0</td><td><span class="en">Free</span><span class="ar">مجاني</span></td><td><span class="en">Each SIM gets a free account</span><span class="ar">كل شريحة تحصل على حساب مجاني</span></td></tr>
+<tr><td><span class="en">Server + Dashboard + Database</span><span class="ar">الخادم + اللوحة + قاعدة البيانات</span></td><td>$0</td><td><span class="en">Free</span><span class="ar">مجاني</span></td><td><span class="en">VPS + Railway free tier</span><span class="ar">VPS + Railway مجاني</span></td></tr>
+<tr><td><strong><span class="en">Total one-time</span><span class="ar">المجموع لمرة واحدة</span></strong></td><td><strong>$28</strong></td><td></td><td></td></tr>
+<tr><td><strong><span class="en">Total monthly</span><span class="ar">المجموع الشهري</span></strong></td><td><strong>$0</strong></td><td></td><td></td></tr>
 </table>
 </div>
 </div>
 </section>
 
-<!-- Telegram Alerts -->
 <section class="fade-in" id="alerts">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-16.5 7.5a2.25 2.25 0 0 0 .126 4.073l3.9 1.206 1.206 3.9a2.25 2.25 0 0 0 4.073.126l1.234-2.708 3.9 2.925a2.25 2.25 0 0 0 3.504-1.554l2.25-16.5a2.242 2.242 0 0 0-2.673-2.683z"/></svg><span data-en>Telegram Alerts</span><span data-ar>تنبيهات تيليجرام</span></div>
-<h2 class="section-title"><span data-en>You get notified when things happen</span><span data-ar>تتلقى تنبيهات عند حدوث أشياء</span></h2>
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-16.5 7.5a2.25 2.25 0 0 0 .126 4.073l3.9 1.206 1.206 3.9a2.25 2.25 0 0 0 4.073.126l1.234-2.708 3.9 2.925a2.25 2.25 0 0 0 3.504-1.554l2.25-16.5a2.242 2.242 0 0 0-2.673-2.683z"/></svg><span class="en">Telegram Alerts</span><span class="ar">تنبيهات تيليجرام</span></div>
+<h2 class="section-title"><span class="en">You get notified when things happen</span><span class="ar">تتلقى تنبيهات عند حدوث أشياء</span></h2>
 <div class="grid-2" style="margin-top: 24px;">
-<div class="card" style="border-left: 4px solid var(--danger);">
-<h3 style="color: var(--danger);"><span data-en>Number banned</span><span data-ar>رقم محظور</span></h3>
-<p data-en>"SIM 2 has been banned. Removed from rotation. Please add a replacement number."</p>
-<p data-ar style="display:none;">"تم حظر SIM 2. تمت إزالته من التدوير. يرجى إضافة رقم بديل."</p>
-</div>
-<div class="card" style="border-left: 4px solid var(--warning);">
-<h3 style="color: var(--warning);"><span data-en>Someone opted out</span><span data-ar>أحدهم ألغى الاشتراك</span></h3>
-<p data-en>"212661112233 replied STOP and was removed from all future campaigns."</p>
-<p data-ar style="display:none;">"212661112233 رد بـ STOP وتمت إزالته من جميع الحملات المستقبلية."</p>
-</div>
-<div class="card" style="border-left: 4px solid var(--accent);">
-<h3 style="color: var(--accent);"><span data-en>Campaign complete</span><span data-ar>اكتملت الحملة</span></h3>
-<p data-en>"Lesson 1 complete. 19 sent, 0 failed, 34% reply rate."</p>
-<p data-ar style="display:none;">"اكتمل الدرس 1. 19 مرسلة، 0 فاشلة، 34% معدل رد."</p>
-</div>
-<div class="card" style="border-left: 4px solid var(--info);">
-<h3 style="color: var(--info);"><span data-en>Auto-resume</span><span data-ar>استئناف تلقائي</span></h3>
-<p data-en>"Auto-resuming campaign: Lesson 1. 50 recipients remaining from yesterday."</p>
-<p data-ar style="display:none;">"استئناف الحملة: الدرس 1. 50 مستلما متبقيا من أمس."</p>
-</div>
+<div class="card" style="border-left: 4px solid var(--danger);"><h3 style="color: var(--danger);"><span class="en">Number banned</span><span class="ar">رقم محظور</span></h3><p><span class="en">"SIM 2 has been banned. Removed from rotation. Please add a replacement."</span><span class="ar">"تم حظر SIM 2. أُزيل من التدوير. يرجى إضافة بديل."</span></p></div>
+<div class="card" style="border-left: 4px solid var(--warning);"><h3 style="color: var(--warning);"><span class="en">Someone opted out</span><span class="ar">أحدهم ألغى الاشتراك</span></h3><p><span class="en">"212661112233 replied STOP and was removed from all future campaigns."</span><span class="ar">"212661112233 رد STOP وأُزيل من جميع الحملات المستقبلية."</span></p></div>
+<div class="card" style="border-left: 4px solid var(--accent);"><h3 style="color: var(--accent);"><span class="en">Campaign complete</span><span class="ar">اكتملت الحملة</span></h3><p><span class="en">"Lesson 1 complete. 19 sent, 0 failed, 34% reply rate."</span><span class="ar">"اكتمل الدرس 1. 19 مرسلة، 0 فاشلة، 34% معدل رد."</span></p></div>
+<div class="card" style="border-left: 4px solid var(--info);"><h3 style="color: var(--info);"><span class="en">Auto-resume</span><span class="ar">استئناف تلقائي</span></h3><p><span class="en">"Auto-resuming campaign: Lesson 1. 50 recipients remaining from yesterday."</span><span class="ar">"استئناف الحملة: الدرس 1. 50 مستلما متبقيا من أمس."</span></p></div>
 </div>
 </div>
 </section>
 
-<!-- FAQ -->
 <section class="fade-in" id="faq">
 <div class="container">
-<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span data-en>FAQ</span><span data-ar>الأسئلة الشائعة</span></div>
-<h2 class="section-title"><span data-en>Common questions</span><span data-ar>أسئلة شائعة</span></h2>
+<div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span class="en">FAQ</span><span class="ar">الأسئلة الشائعة</span></div>
+<h2 class="section-title"><span class="en">Common questions</span><span class="ar">أسئلة شائعة</span></h2>
 <div style="margin-top: 32px;">
 <div class="faq-item" onclick="this.classList.toggle('open')">
-<div class="faq-q"><span data-en>Do I need to keep my phone on?</span><span data-ar>هل أحتاج لإبقاء هاتفي يعمل؟</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-<div class="faq-a"><p data-en>Yes. Each WhatsApp number needs a phone with WhatsApp installed and connected to the internet. The system connects through "Linked Device" like WhatsApp Web. If a phone loses internet, that number goes offline and the system skips it. Other numbers continue sending.</p><p data-ar style="display:none;">نعم. كل رقم واتساب يحتاج هاتفا مع واتساب مثبت ومتصل بالإنترنت. النظام يتصل عبر "جهاز مرتبط" مثل واتساب ويب. إذا فقد الهاتف الإنترنت، ذلك الرقم يصبح غير متصل والنظام يتخطاه. باقي الأرقام تستمر في الإرسال.</p></div>
+<div class="faq-q"><span class="en">Do I need to keep my phone on?</span><span class="ar">هل أحتاج لإبقاء هاتفي يعمل؟</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+<div class="faq-a"><p><span class="en">Yes. Each WhatsApp number needs a phone with WhatsApp installed and connected to the internet. The system connects through "Linked Device" like WhatsApp Web. If a phone loses internet, that number goes offline and the system skips it. Other numbers continue sending.</span><span class="ar">نعم. كل رقم واتساب يحتاج هاتفا مع واتساب مثبت ومتصل بالإنترنت. النظام يتصل عبر "جهاز مرتبط" مثل واتساب ويب. إذا فقد الهاتف الإنترنت، ذلك الرقم يصبح غير متصل والنظام يتخطاه. باقي الأرقام تستمر.</span></p></div>
 </div>
 <div class="faq-item" onclick="this.classList.toggle('open')">
-<div class="faq-q"><span data-en>Can I send different campaigns to the same people?</span><span data-ar>هل يمكنني إرسال حملات مختلفة لنفس الأشخاص؟</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-<div class="faq-a"><p data-en>Yes. Each campaign is separate. You can send Lesson 1 on Monday, Lesson 2 on Tuesday — all to the same 500 people. Sending Lesson 2 does not affect Lesson 1's data. Each campaign tracks its own sent, replied, and failed counts independently.</p><p data-ar style="display:none;">نعم. كل حملة منفصلة. يمكنك إرسال الدرس 1 يوم الإثنين، الدرس 2 يوم الثلاثاء — لكل نفس 500 شخص. إرسال الدرس 2 لا يؤثر على بيانات الدرس 1. كل حملة تتبع عدّاداتها الخاصة.</p></div>
+<div class="faq-q"><span class="en">Can I send different campaigns to the same people?</span><span class="ar">هل يمكنني إرسال حملات مختلفة لنفس الأشخاص؟</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+<div class="faq-a"><p><span class="en">Yes. Each campaign is separate. You can send Lesson 1 on Monday, Lesson 2 on Tuesday — all to the same 500 people. Sending Lesson 2 does not affect Lesson 1's data. Each campaign tracks independently.</span><span class="ar">نعم. كل حملة منفصلة. يمكنك إرسال الدرس 1 يوم الإثنين، الدرس 2 يوم الثلاثاء — لنفس 500 شخص. إرسال الدرس 2 لا يؤثر على بيانات الدرس 1. كل حملة تتبع بشكل مستقل.</span></p></div>
 </div>
 <div class="faq-item" onclick="this.classList.toggle('open')">
-<div class="faq-q"><span data-en>What happens if I have more recipients than capacity?</span><span data-ar>ماذا يحدث إذا كان لدي مستلمون أكثر من الطاقة؟</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-<div class="faq-a"><p data-en>The system sends as many as it can today. The rest are queued. At midnight, counters reset and the system resumes automatically. You get a Telegram alert. No manual action needed.</p><p data-ar style="display:none;">النظام يرسل ما يمكنه اليوم. الباقي في قائمة الانتظار. عند منتصف الليل، تُعاد ضبط العدّادات ويستأنف النظام تلقائيا. تتلقى تنبيها على تيليجرام. لا حاجة لأي إجراء يدوي.</p></div>
+<div class="faq-q"><span class="en">What happens if I have more recipients than capacity?</span><span class="ar">ماذا يحدث إذا كان لدي مستلمون أكثر من الطاقة؟</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+<div class="faq-a"><p><span class="en">The system sends as many as it can today. The rest are queued. At midnight, counters reset and the system resumes automatically. You get a Telegram alert. No manual action needed.</span><span class="ar">النظام يرسل ما يمكنه اليوم. الباقي يُصطف. عند منتصف الليل، تُعاد ضبط العدّادات ويستأنف النظام تلقائيا. تتلقى تنبيها. لا حاجة لإجراء يدوي.</span></p></div>
 </div>
 <div class="faq-item" onclick="this.classList.toggle('open')">
-<div class="faq-q"><span data-en>How do I get contacts into the system?</span><span data-ar>كيف أدخل جهات الاتصال للنظام؟</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-<div class="faq-a"><p data-en>Three ways: Upload a CSV file, use the webhook URL to receive contacts from your website, or add contacts manually. All contacts are stored permanently and can be reused.</p><p data-ar style="display:none;">ثلاث طرق: ارفع ملف CSV، استخدم رابط webhook لاستقبال جهات الاتصال من موقعك، أو أضفها يدويا. جميع جهات الاتصال تُخزن دائما ويمكن إعادة استخدامها.</p></div>
+<div class="faq-q"><span class="en">How do I get contacts into the system?</span><span class="ar">كيف أدخل جهات الاتصال للنظام؟</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+<div class="faq-a"><p><span class="en">Three ways: Upload a CSV file, use the webhook URL to receive contacts from your website, or add contacts manually. All contacts are stored permanently and can be reused.</span><span class="ar">ثلاث طرق: ارفع ملف CSV، استخدم رابط webhook لاستقبال جهات الاتصال من موقعك، أو أضفها يدويا. جميع جهات الاتصال تُخزن دائما ويمكن إعادة استخدامها.</span></p></div>
 </div>
 <div class="faq-item" onclick="this.classList.toggle('open')">
-<div class="faq-q"><span data-en>What happens if someone replies STOP?</span><span data-ar>ماذا يحدث إذا رد أحدهم STOP؟</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-<div class="faq-a"><p data-en>Their phone is added to a global opt-out list. They will never receive another message from any campaign. You get a Telegram alert. This protects your numbers from being reported.</p><p data-ar style="display:none;">يُضاف هاتفهم لقائمة إلغاء اشتراك عامة. لن يستلموا رسالة أخرى من أي حملة. تتلقى تنبيها على تيليجرام. هذا يحمي أرقامك من الإبلاغ.</p></div>
+<div class="faq-q"><span class="en">What happens if someone replies STOP?</span><span class="ar">ماذا يحدث إذا رد أحدهم STOP؟</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+<div class="faq-a"><p><span class="en">Their phone is added to a global opt-out list. They will never receive another message from any campaign. You get a Telegram alert. This protects your numbers from being reported.</span><span class="ar">يُضاف هاتفهم لقائمة إلغاء اشتراك عامة. لن يستلموا رسالة أخرى من أي حملة. تتلقى تنبيها. هذا يحمي أرقامك من الإبلاغ.</span></p></div>
 </div>
 </div>
 </div>
 </section>
 
-<!-- Footer -->
-<footer>
-<div class="container">
-<p data-en>WhatsApp Sender — Smart messaging with anti-ban protection</p>
-<p data-ar style="display:none;">واتساب سندير — رسائل ذكية مع حماية من الحظر</p>
-</div>
-</footer>
+<footer><div class="container"><p><span class="en">WhatsApp Sender — Smart messaging with anti-ban protection</span><span class="ar">واتساب سندير — رسائل ذكية مع حماية من الحظر</span></p></div></footer>
 
 <script>
 function toggleLang() {
   document.body.classList.toggle('rtl');
   document.documentElement.lang = document.body.classList.contains('rtl') ? 'ar' : 'en';
-  // Save preference
   localStorage.setItem('lang', document.documentElement.lang);
 }
-
-// Restore preference
 const savedLang = localStorage.getItem('lang');
 if (savedLang === 'ar') toggleLang();
-
-// Fade-in on scroll
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.1 });
