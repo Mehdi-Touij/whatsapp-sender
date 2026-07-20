@@ -311,6 +311,12 @@ def send_campaign(campaign_id, message_template):
             log_send(campaign_id, r['phone'], instance, "sent")
         else:
             failed += 1
+            # Mark as failed so it doesn't retry forever
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute("UPDATE recipients SET status = 'failed' WHERE phone = %s AND campaign_id = %s", (r['phone'], campaign_id))
+            conn.commit()
+            conn.close()
             log_send(campaign_id, r['phone'], instance, "failed")
             err_str = str(result)[:100]
             print(f"  ❌ Failed: {err_str}")

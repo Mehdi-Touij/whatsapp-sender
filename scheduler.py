@@ -41,10 +41,22 @@ def send_telegram(message):
         pass
 
 def reset_daily_counters():
-    """Reset msgs_sent_today for all numbers at midnight + advance warmup days"""
+    """Reset msgs_sent_today for all numbers at midnight + advance warmup days + cleanup stale numbers"""
     conn = get_db()
     cur = conn.cursor()
     today = date.today()
+    
+    # Cleanup: delete stale "connecting" numbers (older than 1 hour — never scanned)
+    cur.execute("DELETE FROM numbers WHERE status = 'connecting' AND created_at < NOW() - INTERVAL '1 hour'")
+    stale = cur.rowcount
+    if stale > 0:
+        print(f"🧹 Cleaned up {stale} stale 'connecting' numbers")
+    
+    # Cleanup: delete stale QR requests
+    cur.execute("DELETE FROM qr_requests WHERE created_at < NOW() - INTERVAL '2 hours'")
+    stale_qr = cur.rowcount
+    if stale_qr > 0:
+        print(f"🧹 Cleaned up {stale_qr} stale QR requests")
     
     # Advance warmup: increment warmup_day for numbers in warmup
     cur.execute("SELECT instance, warmup_day FROM numbers WHERE warmup_status = 'warmup' AND last_reset_date != %s", (today,))

@@ -55,14 +55,20 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Delete a number
+// Delete a number — creates a delete request that the VPS trigger server will process
 export async function DELETE(req: NextRequest) {
   try {
     const { instance } = await req.json();
     
-    // Mark as deleted in database (VPS will handle Evolution API)
-    await query("UPDATE numbers SET status = 'deleted' WHERE instance = $1", [instance]);
+    // Delete from database immediately
+    await query("DELETE FROM numbers WHERE instance = $1", [instance]);
     await query("DELETE FROM qr_requests WHERE id = $1", [instance]);
+    
+    // Also add a delete request for the VPS to process (delete from Evolution API)
+    await query(
+      "INSERT INTO qr_requests (id, display_name, instance_name, status) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET status = $4",
+      [instance + "-delete", "DELETE", instance, "delete-request"]
+    );
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {

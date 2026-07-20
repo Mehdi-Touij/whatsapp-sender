@@ -35,11 +35,27 @@ def poll_qr_requests():
             conn = psycopg2.connect(DB_URL, sslmode='require')
             cur = conn.cursor()
             
-            # Find pending QR requests
-            cur.execute("SELECT id, display_name, instance_name FROM qr_requests WHERE status = 'pending'")
+            # Find pending QR requests + delete requests
+            cur.execute("SELECT id, display_name, instance_name, status FROM qr_requests WHERE status IN ('pending', 'delete-request')")
             requests_pending = cur.fetchall()
             
-            for req_id, display_name, instance_name in requests_pending:
+            for req_id, display_name, instance_name, req_status in requests_pending:
+                # Handle delete requests
+                if req_status == "delete-request":
+                    try:
+                        resp = requests.delete(
+                            f"{EVOLUTION_URL}/instance/delete/{instance_name}",
+                            headers={"apikey": EVOLUTION_API_KEY},
+                            timeout=10
+                        )
+                        print(f"[DEL] Deleted {instance_name} from Evolution API: {resp.status_code}")
+                    except Exception as e:
+                        print(f"[DEL] Error deleting {instance_name}: {e}")
+                    cur.execute("DELETE FROM qr_requests WHERE id = %s", [req_id])
+                    conn.commit()
+                    continue
+                
+                # Handle QR creation requests
                 print(f"[QR] Processing request for {display_name} ({instance_name})")
                 
                 try:
