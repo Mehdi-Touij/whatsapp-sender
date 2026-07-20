@@ -99,7 +99,7 @@ export function Campaigns({
   const usableNumbers = useMemo(
     () =>
       numbers
-        .filter((n) => n.status !== "restricted" && n.status !== "deleted" && n.warmupStatus !== "warmup")
+        .filter((n) => n.status === "active")
         .sort((a, b) => b.capacityLeft - a.capacityLeft),
     [numbers]
   );

@@ -135,7 +135,7 @@ def poll_connections():
                             conn.commit()
                             print(f"[Connect] {name} ({instance}) is now ACTIVE")
                             
-                            # Try to get phone number
+                            # Try to get phone number from ownerJid
                             try:
                                 resp2 = requests.get(
                                     f"{EVOLUTION_URL}/instance/fetchInstances?instanceName={instance}",
@@ -144,10 +144,9 @@ def poll_connections():
                                 )
                                 data2 = resp2.json()
                                 if isinstance(data2, list) and len(data2) > 0:
-                                    phone = data2[0].get("instance", {}).get("phone", "")
-                                    if phone:
-                                        if not phone.startswith("+"):
-                                            phone = "+" + phone
+                                    owner_jid = data2[0].get("ownerJid", "")
+                                    if owner_jid and "@" in owner_jid:
+                                        phone = "+" + owner_jid.split("@")[0]
                                         cur.execute("UPDATE numbers SET phone = %s WHERE instance = %s", (phone, instance))
                                         conn.commit()
                                         print(f"[Connect] {name} phone: {phone}")
