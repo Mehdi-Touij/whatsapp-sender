@@ -288,13 +288,16 @@ def send_campaign(campaign_id, message_template):
         
         instance = number['instance']
         
-        # Check connection every 20 sends
-        if i > 0 and i % 20 == 0:
-            if not check_number_connection(instance):
-                mark_number_banned(instance)
-                banned_count += 1
-                numbers = [n for n in numbers if n['instance'] != instance]
-                continue
+        # Check connection before each send
+        if not check_number_connection(instance):
+            print(f"  ⚠️ {instance} not connected — skipping, trying next number")
+            numbers = [n for n in numbers if n['instance'] != instance]
+            # Try next number
+            number = get_next_number(numbers)
+            if not number:
+                print(f"  ⏸️ No available numbers — stopping")
+                break
+            instance = number['instance']
         
         # Build message
         message = build_message(message_template, r['name'])
@@ -310,23 +313,55 @@ def send_campaign(campaign_id, message_template):
             mark_sent(r['phone'], instance, campaign_id)
             log_send(campaign_id, r['phone'], instance, "sent")
         else:
-            failed += 1
-            # Mark as failed so it doesn't retry forever
-            conn = get_db()
-            cur = conn.cursor()
-            cur.execute("UPDATE recipients SET status = 'failed' WHERE phone = %s AND campaign_id = %s", (r['phone'], campaign_id))
-            conn.commit()
-            conn.close()
-            log_send(campaign_id, r['phone'], instance, "failed")
-            err_str = str(result)[:100]
+            err_str = str(result)[:200]
             print(f"  ❌ Failed: {err_str}")
+            log_send(campaign_id, r['phone'], instance, "failed")
             
-            # Check if number is banned
-            if 'blocked' in str(result).lower() or 'banned' in str(result).lower() or 'restricted' in str(result).lower():
+            # Check if number is banned or disconnected
+            is_connection_error = 'Connection Closed' in str(result) or 'connection' in str(result).lower()
+            is_banned = 'blocked' in str(result).lower() or 'banned' in str(result).lower() or 'restricted' in str(result).lower()
+            
+            if is_banned:
                 mark_number_banned(instance)
                 banned_count += 1
                 numbers = [n for n in numbers if n['instance'] != instance]
                 print(f"  🚫 {instance} appears banned — removed from rotation")
+                # Don't mark recipient as failed — leave pending for retry with another number
+                continue
+            elif is_connection_error:
+                print(f"  ⚠️ {instance} connection dropped — trying next number")
+                # Remove this number from rotation temporarily
+                numbers = [n for n in numbers if n['instance'] != instance]
+                # Don't mark recipient as failed — leave pending for retry
+                # Try again with a different number if available
+                if numbers:
+                    number = get_next_number(numbers)
+                    if number:
+                        instance = number['instance']
+                        success2, result2 = send_message(instance, r['phone'], message)
+                        if success2:
+                            sent += 1
+                            update_number_stats(instance, True)
+                            number['msgs_today'] += 1
+                            mark_sent(r['phone'], instance, campaign_id)
+                            log_send(campaign_id, r['phone'], instance, "sent")
+                            print(f"  ✅ Sent via fallback {number['display_name']}")
+                            continue
+                # If no fallback worked, mark as failed
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("UPDATE recipients SET status = 'failed' WHERE phone = %s AND campaign_id = %s", (r['phone'], campaign_id))
+                conn.commit()
+                conn.close()
+                failed += 1
+            else:
+                # Other error — mark as failed
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("UPDATE recipients SET status = 'failed' WHERE phone = %s AND campaign_id = %s", (r['phone'], campaign_id))
+                conn.commit()
+                conn.close()
+                failed += 1
         
         # Progress report every 10 sends
         if (i + 1) % 10 == 0:
