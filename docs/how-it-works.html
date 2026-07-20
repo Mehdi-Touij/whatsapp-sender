@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How WhatsApp Sender Works</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: #f8f9fa; color: #1a1a1a; line-height: 1.6; padding: 20px; }
+.container { max-width: 800px; margin: 0 auto; }
+h1 { font-size: 28px; margin-bottom: 8px; color: #166534; }
+.subtitle { color: #666; margin-bottom: 30px; font-size: 16px; }
+h2 { font-size: 22px; margin: 30px 0 15px; color: #166534; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; }
+.card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card h3 { font-size: 17px; margin-bottom: 10px; color: #1a1a1a; }
+.card p { font-size: 15px; color: #444; margin-bottom: 10px; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 13px; font-weight: 600; margin: 2px; }
+.badge-green { background: #dcfce7; color: #166534; }
+.badge-yellow { background: #fef9c3; color: #854d0e; }
+.badge-red { background: #fee2e2; color: #991b1b; }
+.badge-blue { background: #dbeafe; color: #1e40af; }
+.step { display: flex; gap: 15px; margin-bottom: 15px; align-items: flex-start; }
+.step-num { background: #166534; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+.step-content h4 { font-size: 16px; margin-bottom: 5px; }
+.step-content p { font-size: 14px; color: #555; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+th { background: #f3f4f6; padding: 10px; text-align: left; font-weight: 600; border-bottom: 2px solid #e5e7eb; }
+td { padding: 10px; border-bottom: 1px solid #f3f4f6; }
+.example { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin: 10px 0; font-family: monospace; font-size: 14px; }
+.warning { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 15px; margin: 10px 0; }
+.warning strong { color: #92400e; }
+.tip { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 15px; margin: 10px 0; }
+.tip strong { color: #1e40af; }
+ul { margin: 10px 0 10px 20px; }
+li { margin-bottom: 6px; font-size: 14px; color: #444; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>📱 WhatsApp Sender — How It Works</h1>
+<p class="subtitle">A simple guide for non-technical users</p>
+
+<!-- WHAT IS IT -->
+<h2>What Is This System?</h2>
+<div class="card">
+<p>WhatsApp Sender lets you send WhatsApp messages to many people at once — without getting banned.</p>
+<br>
+<p>Instead of sending 1000 messages from 1 number (which gets banned instantly), it spreads messages across multiple numbers, like having 7 different people sending messages.</p>
+</div>
+
+<!-- THE PROBLEM -->
+<h2>The Problem We Solve</h2>
+<div class="card">
+<p>If you send 500 WhatsApp messages from 1 number in 1 hour, WhatsApp will ban that number within hours.</p>
+<br>
+<p>WhatsApp looks for:</p>
+<ul>
+<li>Same message sent many times → looks like spam</li>
+<li>Too many messages per hour → looks like a bot</li>
+<li>No replies → looks like spam (real people get replies)</li>
+<li>Same IP for multiple numbers → looks like automation</li>
+</ul>
+</div>
+
+<!-- HOW IT WORKS -->
+<h2>How It Works — Step by Step</h2>
+
+<div class="card">
+<div class="step">
+<div class="step-num">1</div>
+<div class="step-content">
+<h4>You Upload a List</h4>
+<p>You upload a CSV file with phone numbers and names. Example:</p>
+</div>
+</div>
+<div class="example">
+212661112233, Youssef<br>
+212662223344, Fatima<br>
+212663334455, Khalid
+</div>
+
+<div class="step">
+<div class="step-num">2</div>
+<div class="step-content">
+<h4>You Write Your Message</h4>
+<p>You write the message you want to send. You decide what it says. The system sends EXACTLY what you write.</p>
+</div>
+</div>
+<div class="example">
+Hi Youssef, your Lesson 1 is ready! Reply 1 to confirm.
+</div>
+
+<div class="step">
+<div class="step-num">3</div>
+<div class="step-content">
+<h4>You Click Start</h4>
+<p>The system sends your message to each person, one by one, using different WhatsApp numbers.</p>
+</div>
+</div>
+
+<div class="step">
+<div class="step-num">4</div>
+<div class="step-content">
+<h4>System Rotates Numbers</h4>
+<p>It doesn't send all messages from 1 number. It rotates:</p>
+</div>
+</div>
+<table>
+<tr><th>Message #</th><th>Sent From</th><th>Why This Number?</th></tr>
+<tr><td>1</td><td>SIM 1</td><td>Least messages today (0)</td></tr>
+<tr><td>2</td><td>SIM 2</td><td>Least messages today (0)</td></tr>
+<tr><td>3</td><td>SIM 3</td><td>Least messages today (0)</td></tr>
+<tr><td>4</td><td>SIM 1</td><td>Least messages today (1)</td></tr>
+<tr><td>5</td><td>SIM 2</td><td>Least messages today (1)</td></tr>
+<tr><td>6</td><td>SIM 3</td><td>Least messages today (1)</td></tr>
+</table>
+<p style="font-size:13px;color:#666;margin-top:8px;">The system always picks the number that has sent the FEWEST messages today. This keeps all numbers balanced.</p>
+
+<div class="step">
+<div class="step-num">5</div>
+<div class="step-content">
+<h4>System Waits Between Messages</h4>
+<p>Between each message, it waits 30-90 seconds (random). This makes it look like a real person typing, not a bot.</p>
+</div>
+</div>
+
+<div class="step">
+<div class="step-num">6</div>
+<div class="step-content">
+<h4>System Stops When Limits Reached</h4>
+<p>Each number has limits. When a number hits its limit, the system skips it and uses the next one.</p>
+</div>
+</div>
+</div>
+
+<!-- SAFETY RULES -->
+<h2>Safety Rules (Automatic)</h2>
+<div class="card">
+<table>
+<tr><th>Rule</th><th>What It Does</th><th>Why</th></tr>
+<tr><td><span class="badge badge-blue">20/hour</span></td><td>Max 20 messages per hour per number</td><td>WhatsApp bans numbers sending too fast</td></tr>
+<tr><td><span class="badge badge-green">160/day</span></td><td>Max 160 messages per day per number</td><td>Safe limit to avoid detection</td></tr>
+<tr><td><span class="badge badge-yellow">30-90s wait</span></td><td>Random wait between each message</td><td>Fixed timing = bot pattern = ban</td></tr>
+<tr><td><span class="badge badge-green">Reply 1</span></td><td>"Reply 1 to confirm" added to every message</td><td>0% reply rate = guaranteed ban in 2 weeks</td></tr>
+<tr><td><span class="badge badge-red">Ban detection</span></td><td>If a number gets banned, auto-remove it</td><td>Prevents other numbers from getting banned too</td></tr>
+<tr><td><span class="badge badge-yellow">Warmup</span></td><td>New numbers start at 20/day, increase over 3 days</td><td>New number sending 160/day = instant ban</td></tr>
+</table>
+</div>
+
+<!-- WARMUP -->
+<h2>Warmup Period (New Numbers)</h2>
+<div class="card">
+<p>When you add a new WhatsApp number, it starts in "warmup" mode. It can only send a few messages at first, then more each day.</p>
+<br>
+<table>
+<tr><th>Day</th><th>Max Messages/Day</th><th>Status</th></tr>
+<tr><td>Day 1</td><td>20</td><td><span class="badge badge-yellow">Warmup</span></td></tr>
+<tr><td>Day 2</td><td>60</td><td><span class="badge badge-yellow">Warmup</span></td></tr>
+<tr><td>Day 3</td><td>100</td><td><span class="badge badge-yellow">Warmup</span></td></tr>
+<tr><td>Day 4+</td><td>160</td><td><span class="badge badge-green">Active</span></td></tr>
+</table>
+<br>
+<p>The system advances the warmup day automatically at midnight. You don't need to do anything.</p>
+</div>
+
+<!-- MESSAGES -->
+<h2>Messages — You Control Everything</h2>
+<div class="card">
+<p><strong>The system sends EXACTLY what you write.</strong> It does not change your words.</p>
+<br>
+<p>You have 2 options:</p>
+<br>
+<p><strong>Option 1: One message (simple)</strong></p>
+<div class="example">
+Hi {name}, your Lesson 1 is ready! Reply 1 to confirm.
+</div>
+<p>Every person gets the same message with their name. Simple.</p>
+<br>
+<p><strong>Option 2: Message variants (safer)</strong></p>
+<p>You can write up to 3 different versions of your message. The system rotates them so not everyone gets the exact same text.</p>
+<div class="example">
+Variant 1: Hi {name}, your Lesson 1 is ready! Reply 1 to confirm.<br>
+Variant 2: Hello {name}, Lesson 1 is now available! Reply 1 to confirm.<br>
+Variant 3: Salam {name}, check out Lesson 1! Reply 1 to confirm.
+</div>
+<p>You write all 3. The system picks one randomly for each person. You control what they say.</p>
+<br>
+<div class="warning">
+<strong>Why use variants?</strong> If you send the exact same message to 500 people, WhatsApp detects it as spam. With 3 variants, it looks like a real person sending slightly different messages.
+</div>
+</div>
+
+<!-- CAPACITY -->
+<h2>How Many Messages Can You Send?</h2>
+<div class="card">
+<p>It depends on how many numbers you have:</p>
+<br>
+<table>
+<tr><th>Numbers</th><th>Daily Capacity</th><th>Time for 100 messages</th></tr>
+<tr><td>1 number</td><td>160/day</td><td>~5 hours</td></tr>
+<tr><td>3 numbers</td><td>380/day</td><td>~1.5 hours</td></tr>
+<tr><td>5 numbers</td><td>540/day*</td><td>~1 hour</td></tr>
+<tr><td>7 numbers</td><td>760/day*</td><td>~45 minutes</td></tr>
+</table>
+<p style="font-size:13px;color:#666;margin-top:8px;">* Assuming all numbers passed warmup. New numbers in warmup add 20-100/day each.</p>
+<br>
+<p><strong>Formula:</strong> Number of active numbers × 160 = daily capacity</p>
+</div>
+
+<!-- DASHBOARD -->
+<h2>Dashboard Pages</h2>
+<div class="card">
+<h3>📊 Overview</h3>
+<p>See today's stats: how many sent, how many replies, reply rate, and capacity left. Alerts if any number is banned or at risk.</p>
+<br>
+<h3>📱 Numbers</h3>
+<p>See all your WhatsApp numbers with their status, messages sent today, and health. Add new numbers by scanning a QR code. Delete banned numbers.</p>
+<br>
+<h3>📨 Campaigns</h3>
+<p>Create a new campaign: upload CSV → write message → review → start. Watch live progress as messages are sent.</p>
+<br>
+<h3>📋 Contacts</h3>
+<p>See all your contacts in a table. Search, filter by status, export to CSV. Get a webhook URL to receive contacts from your website or forms.</p>
+</div>
+
+<!-- WHAT HAPPENS NEXT -->
+<h2>What Happens After You Start a Campaign?</h2>
+<div class="card">
+<ol>
+<li><strong>Sending:</strong> System sends messages one by one, rotating numbers, with random delays</li>
+<li><strong>Tracking:</strong> Each message is logged (sent, failed, or replied)</li>
+<li><strong>Replies:</strong> When someone replies "1", the webhook marks them as "replied" in the database</li>
+<li><strong>Opt-out:</strong> If someone replies "STOP", they're added to a global block list — never contacted again</li>
+<li><strong>Ban:</strong> If a number gets banned, it's removed from rotation + you get a Telegram alert</li>
+<li><strong>Completion:</strong> When all messages are sent, you get a Telegram alert with stats</li>
+<li><strong>Auto-resume:</strong> If not all messages were sent (capacity full), the system resumes next day automatically</li>
+</ol>
+</div>
+
+<!-- TELEGRAM ALERTS -->
+<h2>Telegram Alerts (Automatic)</h2>
+<div class="card">
+<p>The system sends you alerts on Telegram when important things happen:</p>
+<br>
+<ul>
+<li>🚫 <strong>Number banned</strong> — "Number SIM 2 has been banned! Please add a replacement."</li>
+<li>🚫 <strong>Opt-out</strong> — "212661112233 replied STOP and was removed from all campaigns"</li>
+<li>✅ <strong>Campaign complete</strong> — "Lesson 1 complete: 19 sent, 0 failed, 34% reply rate"</li>
+<li>📋 <strong>Auto-resume</strong> — "Auto-resuming campaign: Lesson 1 (50 remaining)"</li>
+<li>✅ <strong>Warmup complete</strong> — "SIM 3 graduated from warmup and is now fully active!"</li>
+</ul>
+</div>
+
+<!-- FAQ -->
+<h2>Common Questions</h2>
+<div class="card">
+<h3>Do I need to keep my phone on?</h3>
+<p>Yes. Each WhatsApp number needs a phone with WhatsApp installed and connected to internet. The system connects to WhatsApp through the "Linked Device" feature (like WhatsApp Web).</p>
+<br>
+<h3>What happens if my phone loses internet?</h3>
+<p>The number goes offline. The system detects it and skips that number. Other numbers continue sending. When your phone reconnects, the number comes back automatically.</p>
+<br>
+<h3>Can I use the same number on multiple campaigns?</h3>
+<p>Yes. The same person can receive Lesson 1 today, Lesson 2 tomorrow, Lesson 3 the day after. Each campaign is separate — sending Lesson 2 does not affect Lesson 1's status.</p>
+<br>
+<h3>What if I have more recipients than capacity?</h3>
+<p>The system sends as many as it can today, then queues the rest for tomorrow. At midnight, daily counters reset and the system auto-resumes sending the remaining recipients.</p>
+<br>
+<h3>How do I get new contacts into the system?</h3>
+<p>Three ways: (1) Upload a CSV file in the Campaigns page, (2) Use the webhook URL to receive contacts from your website/form, (3) Add contacts manually in the Contacts page.</p>
+</div>
+
+</div>
+</body>
+</html>
