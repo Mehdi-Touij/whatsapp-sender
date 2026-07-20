@@ -161,6 +161,44 @@ def poll_connections():
         
         time.sleep(5)
 
+# === Campaign Trigger Poller — picks up campaign start/stop from database ===
+def poll_campaign_triggers():
+    """Poll database for pending campaign triggers and execute them."""
+    while True:
+        try:
+            conn = psycopg2.connect(DB_URL, sslmode='require')
+            cur = conn.cursor()
+            
+            cur.execute("SELECT id, campaign_id, action FROM campaign_triggers WHERE status = 'pending'")
+            triggers = cur.fetchall()
+            
+            for trigger_id, campaign_id, action in triggers:
+                print(f"[Campaign] Trigger: {action} campaign {campaign_id}")
+                
+                if action == "start":
+                    env = os.environ.copy()
+                    env["EVOLUTION_URL"] = EVOLUTION_URL
+                    env["EVOLUTION_API_KEY"] = EVOLUTION_API_KEY
+                    env["DATABASE_URL"] = DB_URL + "?sslmode=require"
+                    
+                    subprocess.Popen(
+                        ["/opt/data/.venvs/pot-provider/bin/python", "/opt/data/whatsapp-sender/smart-sender.py", campaign_id],
+                        env=env,
+                        stdout=open(f"/tmp/campaign-{campaign_id}.log", "w"),
+                        stderr=subprocess.STDOUT
+                    )
+                    print(f"[Campaign] Started sender for {campaign_id}")
+                
+                # Mark as processed
+                cur.execute("UPDATE campaign_triggers SET status = 'processed', processed_at = NOW() WHERE id = %s", (trigger_id,))
+                conn.commit()
+            
+            conn.close()
+        except Exception as e:
+            print(f"[Campaign] Poll error: {e}")
+        
+        time.sleep(3)
+
 # === HTTP Handler (for campaign triggers) ===
 class TriggerHandler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -215,6 +253,11 @@ if __name__ == "__main__":
     conn_thread = threading.Thread(target=poll_connections, daemon=True)
     conn_thread.start()
     print("[Connect] Poller started — watching for number connections")
+    
+    # Start campaign trigger poller in background thread
+    campaign_thread = threading.Thread(target=poll_campaign_triggers, daemon=True)
+    campaign_thread.start()
+    print("[Campaign] Poller started — watching for campaign triggers")
     
     # Start HTTP server
     port = int(os.environ.get("TRIGGER_PORT", "8091"))
