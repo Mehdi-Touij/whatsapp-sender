@@ -7,7 +7,7 @@ import {
   Dialog, DialogPanel, Textarea,
 } from "@tremor/react";
 import {
-  PlusIcon, MagnifyingGlassIcon, ArrowDownTrayIcon, ArrowLeftIcon,
+  PlusIcon, MagnifyingGlassIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, ArrowLeftIcon,
   ArrowRightIcon, ClipboardDocumentIcon, ClipboardDocumentCheckIcon,
   TrashIcon, ArrowPathIcon, LinkIcon, TableCellsIcon, XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -114,6 +114,8 @@ export function Contacts() {
   const [deletingPhone, setDeletingPhone] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: "error" | "info"; msg: string } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   const showToast = (kind: "error" | "info", msg: string) => {
     setToast({ kind, msg });
@@ -250,6 +252,45 @@ export function Contacts() {
   const showingFrom = total === 0 ? 0 : page * pageSize + 1;
   const showingTo = Math.min((page + 1) * pageSize, total);
 
+  // ----- CSV Upload Handler -----
+  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const text = await file.text();
+      const lines = text.trim().split(/\r?\n/);
+      const contacts: { phone: string; name: string; source?: string }[] = [];
+      for (let i = 0; i < lines.length; i++) {
+        const parts = lines[i].split(",").map((p) => p.trim());
+        if (i === 0 && (parts[0].toLowerCase() === "phone" || parts[0].toLowerCase() === "name")) continue; // skip header
+        if (parts.length >= 2) {
+          contacts.push({ phone: parts[0], name: parts[1] || "" });
+        } else if (parts.length === 1 && parts[0]) {
+          contacts.push({ phone: parts[0], name: "" });
+        }
+      }
+      if (contacts.length === 0) {
+        showToast("error", "No contacts found in CSV");
+        return;
+      }
+      const res = await fetch("/api/contacts/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contacts }),
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      showToast("info", `Uploaded ${data.inserted || contacts.length} contacts (${data.skipped || 0} duplicates skipped).`);
+      fetchContacts();
+    } catch (err: any) {
+      showToast("error", err?.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   // ----- Render -----
 
   return (
@@ -262,6 +303,9 @@ export function Contacts() {
         <Flex justifyContent="end" className="gap-2 flex-wrap">
           <Button variant="secondary" icon={ArrowDownTrayIcon} onClick={handleExport} disabled={total === 0}>
             Export CSV
+          </Button>
+          <Button variant="secondary" icon={ArrowUpTrayIcon} onClick={() => fileInputRef.current?.click()}>
+            Upload CSV
           </Button>
           <Button icon={PlusIcon} onClick={() => setAddOpen(true)}>Add Contact</Button>
         </Flex>

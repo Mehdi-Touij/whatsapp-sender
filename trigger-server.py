@@ -110,6 +110,58 @@ def poll_qr_requests():
         
         time.sleep(3)
 
+# === Connection Poller — checks if "connecting" numbers have connected ===
+def poll_connections():
+    """Poll Evolution API for numbers in 'connecting' state and mark them active when connected."""
+    while True:
+        try:
+            conn = psycopg2.connect(DB_URL, sslmode='require')
+            cur = conn.cursor()
+            
+            cur.execute("SELECT instance, display_name FROM numbers WHERE status = 'connecting'")
+            connecting = cur.fetchall()
+            
+            for instance, name in connecting:
+                try:
+                    resp = requests.get(
+                        f"{EVOLUTION_URL}/instance/connectionState/{instance}",
+                        headers={"apikey": EVOLUTION_API_KEY},
+                        timeout=10
+                    )
+                    if resp.ok:
+                        state = resp.json().get("instance", {}).get("state", "")
+                        if state == "open":
+                            cur.execute("UPDATE numbers SET status = 'active', warmup_status = 'warmup', warmup_day = 1 WHERE instance = %s", (instance,))
+                            conn.commit()
+                            print(f"[Connect] {name} ({instance}) is now ACTIVE")
+                            
+                            # Try to get phone number
+                            try:
+                                resp2 = requests.get(
+                                    f"{EVOLUTION_URL}/instance/fetchInstances?instanceName={instance}",
+                                    headers={"apikey": EVOLUTION_API_KEY},
+                                    timeout=10
+                                )
+                                data2 = resp2.json()
+                                if isinstance(data2, list) and len(data2) > 0:
+                                    phone = data2[0].get("instance", {}).get("phone", "")
+                                    if phone:
+                                        if not phone.startswith("+"):
+                                            phone = "+" + phone
+                                        cur.execute("UPDATE numbers SET phone = %s WHERE instance = %s", (phone, instance))
+                                        conn.commit()
+                                        print(f"[Connect] {name} phone: {phone}")
+                            except:
+                                pass
+                except Exception as e:
+                    print(f"[Connect] Error checking {instance}: {e}")
+            
+            conn.close()
+        except Exception as e:
+            print(f"[Connect] Poll error: {e}")
+        
+        time.sleep(5)
+
 # === HTTP Handler (for campaign triggers) ===
 class TriggerHandler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -159,6 +211,11 @@ if __name__ == "__main__":
     qr_thread = threading.Thread(target=poll_qr_requests, daemon=True)
     qr_thread.start()
     print("[QR] Poller started — watching for QR requests from dashboard")
+    
+    # Start connection poller in background thread
+    conn_thread = threading.Thread(target=poll_connections, daemon=True)
+    conn_thread.start()
+    print("[Connect] Poller started — watching for number connections")
     
     # Start HTTP server
     port = int(os.environ.get("TRIGGER_PORT", "8091"))
