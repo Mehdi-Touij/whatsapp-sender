@@ -283,7 +283,7 @@ def advance_warmup(instance, current_day):
 def get_pending_recipients(campaign_id, limit=1000):
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT phone, name FROM recipients WHERE campaign_id = %s AND status = 'pending' LIMIT %s", (campaign_id, limit))
+    cur.execute("SELECT phone, name FROM recipients WHERE campaign_id = %s AND status = 'pending' AND opt_in = true LIMIT %s", (campaign_id, limit))
     rows = cur.fetchall()
     conn.close()
     return [{"phone": r[0], "name": r[1]} for r in rows]
