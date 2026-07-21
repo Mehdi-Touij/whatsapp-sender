@@ -20,14 +20,10 @@ EVOLUTION_URL = os.environ.get("EVOLUTION_URL", "http://localhost:8082")
 EVOLUTION_API_KEY = os.environ.get("EVOLUTION_API_KEY", "")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-# Warmup schedule: day -> max messages per day
-WARMUP_SCHEDULE = {
-    0: 20,    # Day 1 (just linked)
-    1: 20,    # Day 1
-    2: 60,    # Day 2
-    3: 100,   # Day 3
-    4: 160,   # Day 4+ (full capacity)
-}
+# No warmup limits — all numbers use the same daily limit
+# Rule: 20 messages per hour per number, 160 per day per number
+def get_effective_limit(warmup_status, warmup_day, daily_limit):
+    return daily_limit or 160
 
 MAX_HOURLY = 20
 MIN_DELAY = 30
@@ -78,9 +74,9 @@ def get_smart_numbers():
         if last_reset != today:
             msgs_today = 0
         
-        # Calculate effective daily limit based on warmup
+        # Calculate effective daily limit — same for all numbers (no warmup)
         if warmup_status == 'warmup':
-            effective_limit = WARMUP_SCHEDULE.get(warmup_day, 20)
+            effective_limit = daily_limit or 160
         else:
             effective_limit = daily_limit or 160
         
@@ -130,15 +126,75 @@ def get_next_number(numbers):
         return num
     return None
 
+def prewarm_contact(instance, phone):
+    """Send a typing presence update to the contact before sending the message.
+    This triggers Baileys to fetch the tctoken for that contact."""
+    try:
+        # Use the chat/whatsappNumbers endpoint to check the number exists
+        # This also triggers LID resolution which helps with tctoken
+        resp = requests.post(
+            f"{EVOLUTION_URL}/chat/whatsappNumbers/{instance}",
+            headers={"apikey": EVOLUTION_API_KEY, "Content-Type": "application/json"},
+            json={"numbers": [phone]},
+            timeout=30
+        )
+        if resp.ok:
+            data = resp.json()
+            if isinstance(data, list) and len(data) > 0:
+                exists = data[0].get("exists", False)
+                jid = data[0].get("jid", "")
+                return exists, jid
+        return False, ""
+    except Exception as e:
+        return False, str(e)
+
 def send_message(instance, phone, text):
     try:
+        # Step 1: Pre-warm the contact (triggers tctoken fetch)
+        prewarm_contact(instance, phone)
+        
+        # Step 2: Wait 2 seconds for tctoken to be fetched
+        time.sleep(2)
+        
+        # Step 3: Send the actual message
         resp = requests.post(
             f"{EVOLUTION_URL}/message/sendText/{instance}",
             headers={"apikey": EVOLUTION_API_KEY, "Content-Type": "application/json"},
             json={"number": phone, "text": text},
             timeout=60
         )
-        return resp.ok, resp.json() if resp.ok else resp.text
+        if not resp.ok:
+            return False, resp.text
+        
+        data = resp.json()
+        status = data.get("status", "")
+        
+        # If PENDING, the message was accepted. Wait 3s and check if it gets delivered
+        # If 463 error occurred, the tctoken was fetched during prewarm — retry once
+        if status == "PENDING":
+            # Wait 3 seconds for tctoken to be processed
+            time.sleep(3)
+            # Retry the send — now with tctoken available
+            resp2 = requests.post(
+                f"{EVOLUTION_URL}/message/sendText/{instance}",
+                headers={"apikey": EVOLUTION_API_KEY, "Content-Type": "application/json"},
+                json={"number": phone, "text": text},
+                timeout=60
+            )
+            if resp2.ok:
+                data2 = resp2.json()
+                status2 = data2.get("status", "")
+                if status2 in ("SENT", "DELIVERED", "READ"):
+                    return True, data2
+                # Even if still PENDING, accept it (Baileys will retry delivery)
+                return True, data2
+        
+        if status in ("SENT", "DELIVERED", "READ"):
+            return True, data
+        elif status == "PENDING":
+            return True, data
+        else:
+            return False, data
     except Exception as e:
         return False, str(e)
 
