@@ -148,27 +148,28 @@ def prewarm_contact(instance, phone):
     except Exception as e:
         return False, str(e)
 
-def wait_for_tctoken(instance, phone, timeout=30):
+def wait_for_tctoken(instance, phone, timeout=60):
     """Wait until tctoken is fetched for this contact by checking Evolution API logs.
     Returns True when token recovery is complete, False on timeout."""
-    log_file = "/tmp/evolution-api-presence-fix.log"
+    import glob
+    log_files = glob.glob("/tmp/evolution-api*.log")
     start_time = time.time()
     
     while time.time() - start_time < timeout:
-        try:
-            with open(log_file, "r") as f:
-                lines = f.readlines()
-            
-            # Check recent lines for token recovery for this phone number
-            for line in lines[-20:]:
-                if phone in line and ("token recovery" in line.lower() or "completed 463" in line.lower()):
-                    return True
-                if phone in line and "tctoken" in line.lower():
-                    return True
-            
-            time.sleep(1)
-        except:
-            time.sleep(1)
+        for log_file in log_files:
+            try:
+                with open(log_file, "r") as f:
+                    lines = f.readlines()
+                
+                for line in lines[-30:]:
+                    if phone in line and ("token recovery" in line.lower() or "completed 463" in line.lower()):
+                        # Token recovery completed — wait 3s for it to be stored in auth state
+                        time.sleep(3)
+                        return True
+            except:
+                pass
+        
+        time.sleep(1)
     
     return False
 
