@@ -148,55 +148,84 @@ def prewarm_contact(instance, phone):
     except Exception as e:
         return False, str(e)
 
+def wait_for_tctoken(instance, phone, timeout=30):
+    """Wait until tctoken is fetched for this contact by checking Evolution API logs.
+    Returns True when token recovery is complete, False on timeout."""
+    log_file = "/tmp/evolution-api-presence-fix.log"
+    start_time = time.time()
+    
+    while time.time() - start_time < timeout:
+        try:
+            with open(log_file, "r") as f:
+                lines = f.readlines()
+            
+            # Check recent lines for token recovery for this phone number
+            for line in lines[-20:]:
+                if phone in line and ("token recovery" in line.lower() or "completed 463" in line.lower()):
+                    return True
+                if phone in line and "tctoken" in line.lower():
+                    return True
+            
+            time.sleep(1)
+        except:
+            time.sleep(1)
+    
+    return False
+
 def send_message(instance, phone, text):
-    try:
-        # Step 1: Pre-warm the contact (triggers tctoken fetch)
-        prewarm_contact(instance, phone)
-        
-        # Step 2: Wait 2 seconds for tctoken to be fetched
-        time.sleep(2)
-        
-        # Step 3: Send the actual message
-        resp = requests.post(
-            f"{EVOLUTION_URL}/message/sendText/{instance}",
-            headers={"apikey": EVOLUTION_API_KEY, "Content-Type": "application/json"},
-            json={"number": phone, "text": text},
-            timeout=60
-        )
-        if not resp.ok:
-            return False, resp.text
-        
-        data = resp.json()
-        status = data.get("status", "")
-        
-        # If PENDING, the message was accepted. Wait 3s and check if it gets delivered
-        # If 463 error occurred, the tctoken was fetched during prewarm — retry once
-        if status == "PENDING":
-            # Wait 3 seconds for tctoken to be processed
-            time.sleep(3)
-            # Retry the send — now with tctoken available
-            resp2 = requests.post(
+    """Send message with 463 retry — first send fetches token, second send delivers"""
+    max_retries = 3
+    
+    for attempt in range(max_retries):
+        try:
+            # Step 1: Pre-warm the contact
+            prewarm_contact(instance, phone)
+            time.sleep(1)
+            
+            # Step 2: Send the message
+            resp = requests.post(
                 f"{EVOLUTION_URL}/message/sendText/{instance}",
                 headers={"apikey": EVOLUTION_API_KEY, "Content-Type": "application/json"},
                 json={"number": phone, "text": text},
                 timeout=60
             )
-            if resp2.ok:
-                data2 = resp2.json()
-                status2 = data2.get("status", "")
-                if status2 in ("SENT", "DELIVERED", "READ"):
-                    return True, data2
-                # Even if still PENDING, accept it (Baileys will retry delivery)
-                return True, data2
-        
-        if status in ("SENT", "DELIVERED", "READ"):
-            return True, data
-        elif status == "PENDING":
-            return True, data
-        else:
-            return False, data
-    except Exception as e:
-        return False, str(e)
+            if not resp.ok:
+                return False, resp.text
+            
+            data = resp.json()
+            status = data.get("status", "")
+            
+            if status in ("SENT", "DELIVERED", "READ"):
+                return True, data
+            elif status == "PENDING":
+                if attempt < max_retries - 1:
+                    # PENDING = 463 happened, token is being fetched
+                    # WAIT until token is actually received (not a fixed timer)
+                    print(f"  ⏳ PENDING (attempt {attempt+1}) — waiting for tctoken to be received...")
+                    got_token = wait_for_tctoken(instance, phone, timeout=30)
+                    if got_token:
+                        print(f"  ✅ tctoken received — retrying send...")
+                    else:
+                        print(f"  ⏳ tctoken timeout — retrying anyway...")
+                    time.sleep(2)  # Small buffer after token received
+                    continue
+                else:
+                    return True, data
+            else:
+                if attempt < max_retries - 1:
+                    print(f"  ⏳ Status '{status}' (attempt {attempt+1}) — retrying...")
+                    time.sleep(5)
+                    continue
+                return False, data
+                
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"  ⏳ Error (attempt {attempt+1}): {str(e)[:80]} — retrying...")
+                time.sleep(5)
+                continue
+            return False, str(e)
+    
+    return False, "Max retries exceeded"
 
 def update_number_stats(instance, success):
     conn = get_db()
